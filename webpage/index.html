@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>3D Pano Inpainting: Building a VR Environment from a Single Input Panorama</title>
+<style>
+body {
+  font-family: -apple-system, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+margin: 0 auto;
+padding: 30px 20px 50px;
+max-width: 800px;
+}
+h1 { 
+text-align: center;
+}
+h2 { 
+text-align: center;
+}
+.authors {
+text-align: center;
+}
+
+.video-container{
+    width:100%;
+    position: static;
+    text-align:center;
+}
+
+.links {
+text-align: center;
+color: #3273dc;
+}
+a:link {
+color: #3273dc;
+}
+
+.thumbnails {
+    padding: 10px;
+    width: 100%;
+    margin: auto;
+}
+
+.thumbnail {
+    position: relative;
+    width: 100%;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.082);
+    margin: 20px 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.thumbnail img {
+    display: inline-block;
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.button-wrapper {
+    display: flex;
+    background:white;
+
+}
+
+figcaption {
+
+  text-align: center;
+}
+
+
+.button-wrapper button {
+    padding: 10px 15px;
+    font-size: 16px;
+    font-family: inherit;
+    margin:0;
+    background-color: white;
+    color: #3273dc;
+    border: 1px solid rgb(241, 241, 241);
+    width: 100%;
+    cursor: pointer;
+
+}
+.button-wrapper button:nth-child(1) {
+    border-bottom-left-radius: 10px;
+}
+
+.button-wrapper button:nth-child(3) {
+    border-bottom-right-radius: 10px;
+}
+
+</style>
+</head>
+<body>
+    <h1>3D Pano Inpainting: Building a VR Environment from a Single Input Panorama</h1>
+    <p class=authors>Shivam Ajisa<sup>1</sup><br>
+        Edward Du<sup>1</sup><br>
+        Nam Nguyen<sup>1</sup><br>
+        Stefanie Zollmann<sup>2</sup><br>
+        Jonathan Ventura<sup>1</sup></p>
+        <p class=authors>
+            <sup>1</sup>California Polytechnic State University, San Luis Obispo, CA, USA<br>
+            <sup>2</sup>University of Otago, Dunedin, New Zealand<br>
+        <h3 class="links">
+                <a href="assets/abstract.pdf">IEEE VR 2024 Poster Abstract</a>  |
+                <!-- <a href="https://youtu.be/AMSUpCLFoTk">Video</a>  | -->
+                <a href="https://github.com/jonathanventura/3d-pano-inpainting">Code</a>
+        </h2>    
+            <hr>
+            <figure>
+                <img src="assets/model.png" style="max-width: 100%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
+                <figcaption>Our novel system takes as input a single panoramic image, generates a depth map, and applies an inpainting method adapted for 360◦ content to produce a 3D textured mesh for real-time 6DOF view synthesis in a VR headset. </figcaption>
+           </figure>
+           <h2>Abstract</h2>
+           <p>
+            Creating 360-degree 3D content is challenging because it requires either a multi-camera rig or a collection of many images taken from different perspectives. Our approach aims to generate a 360◦ VR scene from a single panoramic image using a learning-based inpainting method adapted for panoramic content. We introduce a pipeline capable of transforming an equirectangular panoramic RGB image into a complete 360◦ 3D virtual reality scene represented as a textured mesh, which is easily rendered on a VR headset using standard graphics rendering pipelines. We qualitatively evaluate our results on a synthetic dataset consisting of 360 panoramas in indoor scenes.
+           </p>
+           <h2>Video</h2>
+           <div class = "video-container">
+            <iframe src="https://drive.google.com/file/d/1rnMd4wmCa0hrbQxBWfFABpOcpnT0bv-L/preview" width="720" height="360" allow="autoplay"></iframe>
+           </div>
+           
+           
+        
+</body>
