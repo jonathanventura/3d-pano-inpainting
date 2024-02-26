@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js vr - panorama with depth</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+        <style>
+            #progressBar {
+                width: 500px;
+                height: 24px;
+                position: absolute;
+                left: 50%;
+                top: 10px;
+                margin-left: -250px;
+            }
+        </style>
+        <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+        <script type="importmap">
+          {
+            "imports": {
+              "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+              "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
+            }
+          }
+        </script>
+	</head>
+	<body>
+        <progress value="0" max="100" id="progressBar"></progress>
+		<div id="container"></div>
+
+		<script type="module">
+
+            import * as THREE from 'three';
+			import { VRButton } from 'three/addons/webxr/VRButton.js';
+            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+			import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+			import Stats from 'three/addons/libs/stats.module.js';
+
+			let camera, scene, renderer, sphere, clock;
+
+            const stats = new Stats();
+            container.appendChild( stats.dom );
+
+			init();
+			animate();
+
+			function init() {
+
+				const container = document.getElementById( 'container' );
+
+				clock = new THREE.Clock();
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x101010 );
+
+				const light = new THREE.AmbientLight( 0xffffff, 1 );
+				scene.add( light );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
+				scene.add( camera );
+                /*
+				const loader = new PLYLoader();
+                loader.load( './mesh1.ply',
+                    function ( geometry ) {
+                        geometry.computeVertexNormals();
+
+                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+                        const mesh = new THREE.Mesh( geometry, material );
+
+                        scene.add(mesh);
+                        progressBar.style.display = 'none'
+                    },
+                */
+
+                
+                const loader = new GLTFLoader();
+                loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/VRReady4k_scaled.glb',
+                    function ( glb ) {
+                        console.log(glb.scene);
+                        var geometry;
+                        glb.scene.traverse(function(child) {
+                            if (child.isMesh) {
+                                geometry = child.geometry;
+                            }
+                        });
+                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+                        const mesh = new THREE.Mesh( geometry, material );
+
+                        scene.add(mesh);
+                        progressBar.style.display = 'none'
+                    },
+                
+
+                    function ( xhr ) {
+                        if ( xhr.lengthComputable ) {
+                            var percentComplete = (xhr.loaded / xhr.total) * 100;
+                            progressBar.value = percentComplete;
+                            progressBar.style.display = 'block';
+                        }
+                    },
+                    function ( error ) {
+                        console.log( 'An error happened' );
+                        console.log( error );
+                    }
+                );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.xr.enabled = true;
+				renderer.xr.setReferenceSpaceType( 'local-floor' );
+				container.appendChild( renderer.domElement );
+
+				document.body.appendChild( VRButton.createButton( renderer ) );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				renderer.setAnimationLoop( render );
+
+			}
+
+			function render() {
+
+				// If we are not presenting move the camera a little so the effect is visible
+
+				if ( renderer.xr.isPresenting === false ) {
+
+					const time = clock.getElapsedTime();
+
+					camera.rotation.y += 0.01;
+					camera.position.x = Math.sin( time ) * 0.1;
+					camera.position.z = Math.cos( time ) * 0.1;
+
+				}
+
+				stats.update();
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
+</html>
