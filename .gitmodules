@@ -1,3 +1,0 @@
-[submodule "depth-estimation/360monodepth"]
-	path = depth-estimation/360monodepth
-	url = https://github.com/manurare/360monodepth.git
