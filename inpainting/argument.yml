@@ -11,17 +11,17 @@ z_shift_range: [-0.05, -0.05, -0.05, -0.05]
 traj_types: ['double-straight-line', 'double-straight-line', 'circle', 'circle']
 video_postfix: ['dolly-zoom-in', 'zoom-in', 'circle', 'swing']
 specific: ''
-longer_side_len: 960
-src_folder: image
-depth_folder: depth
-mesh_folder: mesh
-video_folder: video
+longer_side_len: 2048
+src_folder: pano
+depth_folder: panodepth
+mesh_folder: panomesh
+video_folder: panovideo
 load_ply: False
 save_ply: True
 inference_video: True
 gpu_ids: 0
 offscreen_rendering: False
-img_format: '.jpg'
+img_format: '.png'
 depth_format: '.npy'
 require_midas: False
 depth_threshold: 0.04
@@ -40,8 +40,8 @@ log_depth: True
 largest_size: 512
 depth_edge_dilate: 10
 depth_edge_dilate_2: 5
-extrapolate_border: True
-extrapolation_thickness: 60
+extrapolate_border: False
+extrapolation_thickness: 0
 repeat_inpaint_edge: True
 crop_border: [0.03, 0.03, 0.05, 0.03]
 anti_flickering: True
