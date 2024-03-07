@@ -1,0 +1,1 @@
+/monodepth/data/0001_rgb.jpg None

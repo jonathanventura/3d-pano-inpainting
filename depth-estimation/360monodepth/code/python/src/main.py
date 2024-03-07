@@ -90,7 +90,7 @@ class Options():
         parser.add_argument("--expname", type=str, default="monodepth", help="experiment name")
         parser.add_argument("--blending_method", type=str, default="poisson",
                             choices=['poisson', 'frustum', 'radial', 'nn', 'mean', 'all'])
-        parser.add_argument("--data", type=str, default="../../../data/erp_00_data.txt",
+        parser.add_argument("--data", type=str, default="../../../data/data.txt",
                             help="The format of this file needs to be one line per sample as following: "
                                  "/path/to/rgb.[png,jpg] /path/to/depth_gt.dpt")
         parser.add_argument("--grid_size", type=grid_size_type, default="8x7", help="width x height")
@@ -411,6 +411,7 @@ def monodepth_360(opt):
     # 0) settting parameters
     # 0-0) data file name and folder
     output_folder = os.path.join(Path(MAIN_DATA_DIR).parent.absolute(), "results/{}".format(opt.expname))
+    print("************OUTPUT FOLDER: ",output_folder,"********************")
     output_results_file = os.path.join(output_folder, "{}.txt".format(opt.expname))
     Path(output_folder).mkdir(exist_ok=True, parents=True)
 
@@ -492,11 +493,11 @@ def monodepth_360(opt):
             serialization.save_predictions(output_folder, erp_gt_depthmap, erp_rgb_image_data, estimated_depthmap,
                                            opt.persp_monodepth, idx=idx)
 
-            if opt.grid_search:
-                metrics_list.append(list(weights) + [item for dic in pred_metrics for item in dic.values()])
-            else:
-                serialization.save_metrics(output_results_file, pred_metrics, times, times_header,
-                                           idx, list(estimated_depthmap.keys()))
+            #if opt.grid_search:
+                #metrics_list.append(list(weights) + [item for dic in pred_metrics for item in dic.values()])
+            #else:
+                #serialization.save_metrics(output_results_file, pred_metrics, times, times_header,
+                                           #idx, list(estimated_depthmap.keys()))
 
             # Remove temporal storage folder
             if opt.rm_debug_folder and os.path.isdir(debug_output_dir):

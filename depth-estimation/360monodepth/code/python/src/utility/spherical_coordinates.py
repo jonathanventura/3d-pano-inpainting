@@ -148,10 +148,10 @@ def car2sph(points_car, min_radius=1e-10):
 
     valid_list = radius > min_radius  # set the 0 radius to origin.
 
-    theta = np.zeros((points_car.shape[0]), np.float)
+    theta = np.zeros((points_car.shape[0]), np.float64)
     theta[valid_list] = np.arctan2(points_car[:, 0][valid_list], points_car[:, 2][valid_list])
 
-    phi = np.zeros((points_car.shape[0]), np.float)
+    phi = np.zeros((points_car.shape[0]), np.float64)
     phi[valid_list] = -np.arcsin(np.divide(points_car[:, 1][valid_list], radius[valid_list]))
 
     return np.stack((theta, phi), axis=1)
