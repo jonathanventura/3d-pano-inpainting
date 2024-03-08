@@ -14,12 +14,12 @@ import cv2
 import scipy.misc as misc
 from skimage import io
 from functools import partial
-from vispy import scene, io
-from vispy.scene import visuals
+#from vispy import scene, io
+#from vispy.scene import visuals
 from functools import reduce
 # from moviepy.editor import ImageSequenceClip
 import scipy.misc as misc
-from vispy.visuals.filters import Alpha
+#from vispy.visuals.filters import Alpha
 import cv2
 from skimage.transform import resize
 import copy

@@ -12,10 +12,10 @@ traj_types: ['double-straight-line', 'double-straight-line', 'circle', 'circle']
 video_postfix: ['dolly-zoom-in', 'zoom-in', 'circle', 'swing']
 specific: ''
 longer_side_len: 2048
-src_folder: pano
-depth_folder: panodepth
-mesh_folder: panomesh
-video_folder: panovideo
+src_folder: ./data
+depth_folder: ./results
+mesh_folder: ./results
+video_folder: ./results
 load_ply: False
 save_ply: True
 inference_video: True

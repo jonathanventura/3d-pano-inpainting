@@ -3,7 +3,7 @@ import argparse
 import glob
 import os
 from functools import partial
-import vispy
+#import vispy
 import scipy.misc as misc
 from tqdm import tqdm
 import yaml
@@ -28,8 +28,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
 args = parser.parse_args()
 config = yaml.load(open(args.config, 'r'), Loader=yaml.Loader)
-if config['offscreen_rendering'] is True:
-    vispy.use(app='egl')
+#if config['offscreen_rendering'] is True:
+    #vispy.use(app='egl')
 os.makedirs(config['mesh_folder'], exist_ok=True)
 os.makedirs(config['video_folder'], exist_ok=True)
 os.makedirs(config['depth_folder'], exist_ok=True)

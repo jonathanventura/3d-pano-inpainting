@@ -410,7 +410,7 @@ def monodepth_360(opt):
     """Pipeline."""
     # 0) settting parameters
     # 0-0) data file name and folder
-    output_folder = os.path.join(Path(MAIN_DATA_DIR).parent.absolute(), "results/{}".format(opt.expname))
+    output_folder = os.path.join(Path(MAIN_DATA_DIR).parent.absolute(), "results")
     print("************OUTPUT FOLDER: ",output_folder,"********************")
     output_results_file = os.path.join(output_folder, "{}.txt".format(opt.expname))
     Path(output_folder).mkdir(exist_ok=True, parents=True)
@@ -490,7 +490,7 @@ def monodepth_360(opt):
             erp_gt_depthmap = depthmap_utils.read_dpt(erp_gt_filepath) if erp_gt_filepath != "" else None
             pred_metrics = error_metric(estimated_depthmap, erp_gt_depthmap) if erp_gt_filepath != "" else None
 
-            serialization.save_predictions(output_folder, erp_gt_depthmap, erp_rgb_image_data, estimated_depthmap,
+            serialization.save_predictions(output_folder, erp_image_filename, erp_gt_depthmap, erp_rgb_image_data, estimated_depthmap,
                                            opt.persp_monodepth, idx=idx)
 
             #if opt.grid_search:

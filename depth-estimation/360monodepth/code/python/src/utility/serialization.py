@@ -8,6 +8,7 @@ import json
 import os
 import pickle
 from logger import Logger
+from pathlib import Path
 
 log = Logger(__name__)
 log.logger.propagate = False
@@ -337,7 +338,7 @@ def save_metrics(output_file, pred_metrics, times, times_header, idx, blending_m
     f.close()
 
 
-def save_predictions(output_folder, erp_gt_depthmap, erp_rgb_image_data, estimated_depthmap, persp_monodepth, idx=0):
+def save_predictions(output_folder, erp_image_filename, erp_gt_depthmap, erp_rgb_image_data, estimated_depthmap, persp_monodepth, idx=0):
     # Plot error maps
     vmax = None
     vmin = None
@@ -352,8 +353,7 @@ def save_predictions(output_folder, erp_gt_depthmap, erp_rgb_image_data, estimat
         else:
             pred = estimated_depthmap[key]
 
-        np.save(os.path.join(output_folder, "{:03}_360monodepth_{}_{}.npy".format(idx, persp_monodepth, key)),
-                   pred)
+        np.save(os.path.join(output_folder, Path(erp_image_filename).stem+'.npy'), pred)
         plt.imsave(os.path.join(output_folder, "{:03}_360monodepth_{}_{}.png".format(idx, persp_monodepth, key)),
                    pred, cmap="turbo", vmin=vmin, vmax=vmax)
 

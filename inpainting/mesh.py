@@ -6,11 +6,11 @@ except ImportError:
     import networkx as netx
 import matplotlib.pyplot as plt
 from functools import partial
-from vispy import scene, io
-from vispy.scene import visuals
-from vispy.visuals.filters import Alpha
+#from vispy import scene, io
+#from vispy.scene import visuals
+#from vispy.visuals.filters import Alpha
 import cv2
-from moviepy.editor import ImageSequenceClip
+#from moviepy.editor import ImageSequenceClip
 from skimage.transform import resize
 import time
 import copy

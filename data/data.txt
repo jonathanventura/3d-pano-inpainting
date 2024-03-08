@@ -1,0 +1,2 @@
+/monodepth/data/basel_stapfelberg_panorama.png None
+/monodepth/data/soissons_cathedral_interior.png None
