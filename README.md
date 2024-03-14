@@ -33,19 +33,39 @@ Before attempting to build this project, make sure you have [Docker Engine](http
 ### Installation
 
 Clone the repository
-   ```git clone https://github.com/jonathanventura/3d-pano-inpainting.git
-   cd 3d-pano-inpainting
-   ```
+```
+git clone https://github.com/jonathanventura/3d-pano-inpainting.git
+cd 3d-pano-inpainting
+```
 
 ### Processing panoramic images
 
 2. Place your panoramic images in the ```data``` directory.  The images should be in equirectangular format and the width of each image should be twice the height.  You will also need to update the filenames in ```data/data.txt```.
 3. Execute the depth estimation step
-   ```sh depth-estimation/run_360monodepth.sh
-   ```
-4. Execute the meshing and inpainting step
-   ```sh inpainting/run_3d_photo_inpainting.sh
-   ```
-5. The results are placed in the ```results``` directory.
-6. Optionally re-scale the mesh according to the known height of the camera off of the ground:
-   ```python mesh/estimate_scale_histogram.py <input mesh> <output mesh> [--camera_height <height>]```
+```
+sh depth-estimation/run_360monodepth.sh
+```   
+5. Execute the meshing and inpainting step
+```
+sh inpainting/run_3d_photo_inpainting.sh
+```
+6. The results are placed in the ```results``` directory.
+7. Re-scale the mesh according to the known height of the camera off of the ground:
+```
+python mesh/estimate_scale_histogram.py <input mesh> <output mesh> [--camera_height <height>]
+```
+
+#### Notes ####
+
+The inpainting code will resize the images to a fixed maximum side length determined by the ```longer_side_len``` parameter in ```inpainting/argument.yml```.
+
+### Running the renderer in a web browser ###
+
+Copy the resulting ```.glb``` file into ```docs/assets``` and update the path in ```docs/renderer.html``` accordingly.
+
+To start a renderer you can use
+```
+python -m http.server
+```
+
+and then navigate to ```localhost:8000```.
