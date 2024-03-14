@@ -63,9 +63,9 @@ The inpainting code will resize the images to a fixed maximum side length determ
 
 Copy the resulting ```.glb``` file into ```docs/assets``` and update the path in ```docs/renderer.html``` accordingly.
 
-To start a renderer you can use
+To start the renderer you can use
 ```
 python -m http.server
 ```
 
-and then navigate to ```localhost:8000```.
+and then navigate to ```localhost:8000/renderer.html```.
