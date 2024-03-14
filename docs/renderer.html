@@ -37,9 +37,10 @@
             import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 			import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import Stats from 'three/addons/libs/stats.module.js';
 
-			let camera, scene, renderer, sphere, clock;
+			let camera, scene, renderer, sphere, clock, controls;
 
             const stats = new Stats();
             container.appendChild( stats.dom );
@@ -60,22 +61,10 @@
 				scene.add( light );
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
+				camera.position.set( 0, 2, 0 );
 				scene.add( camera );
-                /*
-				const loader = new PLYLoader();
-                loader.load( './mesh1.ply',
-                    function ( geometry ) {
-                        geometry.computeVertexNormals();
 
-                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        const mesh = new THREE.Mesh( geometry, material );
 
-                        scene.add(mesh);
-                        progressBar.style.display = 'none'
-                    },
-                */
-
-                
                 const loader = new GLTFLoader();
                 loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/basel_stapfelberg_panorama_2k_scaled.glb',
                     function ( glb ) {
@@ -114,9 +103,19 @@
 				renderer.xr.setReferenceSpaceType( 'local-floor' );
 				container.appendChild( renderer.domElement );
 
-				document.body.appendChild( VRButton.createButton( renderer ) );
+				container.appendChild( VRButton.createButton( renderer ) );
 
-				//
+                controls = new OrbitControls( camera, renderer.domElement );
+                controls.target = new THREE.Vector3(0,2,0);
+                controls.autoRotate = true;
+				controls.listenToKeyEvents( window ); // optional
+				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+				controls.dampingFactor = 0.05;
+
+				controls.screenSpacePanning = false;
+
+				controls.minDistance = 1;
+				controls.maxDistance = 3;
 
 				window.addEventListener( 'resize', onWindowResize );
 
@@ -138,17 +137,8 @@
 			}
 
 			function render() {
-
-				// If we are not presenting move the camera a little so the effect is visible
-
 				if ( renderer.xr.isPresenting === false ) {
-
-					const time = clock.getElapsedTime();
-
-					camera.rotation.y += 0.01;
-					camera.position.x = Math.sin( time ) * 0.1;
-					camera.position.z = Math.cos( time ) * 0.1;
-
+	                controls.update();
 				}
 
 				stats.update();
