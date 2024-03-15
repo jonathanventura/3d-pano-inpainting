@@ -69,3 +69,10 @@ python -m http.server
 ```
 
 and then navigate to ```localhost:8000/renderer.html```.
+
+<!-- LICENSE -->
+<!-- https://choosealicense.com/ -->
+
+## License
+
+This project is distributed under the terms of the  MIT license. See [LICENSE](LICENSE) for details and more information.
