@@ -16,6 +16,10 @@
             }
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+		<script>
+			
+			
+		</script>
 
         <script type="importmap">
           {
@@ -64,9 +68,11 @@
 				camera.position.set( 0, 2, 0 );
 				scene.add( camera );
 
+				const urlParams = new URLSearchParams(window.location.search);
+				const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
 
-                const loader = new GLTFLoader();
-                loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/basel_stapfelberg_panorama_2k_scaled.glb',
+				const loader = new GLTFLoader();
+                loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/'+ scene_name,
                     function ( glb ) {
                         console.log(glb.scene);
                         var geometry;

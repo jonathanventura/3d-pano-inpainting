@@ -51,17 +51,10 @@ color: #3273dc;
     overflow: hidden;
 }
 
-.thumbnail img {
-/* .thumbnail img {
-    float: left;
-    display: inline-block;
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    width: 25%;
-    /* height: 200px; */
-    /* object-fit: cover; */
-} */
+.thumbnail:hover {
+    filter: brightness(50%);
+}
+
 
 .column {
   float: left;
@@ -108,25 +101,6 @@ figcaption {
     border-bottom-right-radius: 10px;
 }
 
-/* .thumbnail {
-    width: 50%;
-    float: left;
-    margin: 0;
-    text-align: center;
-    padding: 0;
-} */
-
-
-#container {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.082);
-    margin: 20px 0;
-    border-radius: 10px;
-    overflow: hidden;
-}
 .item {
     width: 100%;
     display: block;
@@ -183,58 +157,64 @@ figcaption {
 			<div class="container" style="width: 100%">
 				<!-- Start Carousel -->
 				<div id="carousel-demo" class="carousel">
-					<div>
-                        <a href="renderer.html">
+					<div class="thumbnail">
+                        <a href="renderer.html?scene=basel_stapfelberg">
                             <img src="assets/mesh_thumbnails/basel_stapfelberg.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                        <figcaption>Basel, Switzerland</figcaption>
-                        <br>
+                        <figcaption>Stapfelberg, Basel</figcaption>
+                        <figcaption>Switzerland</figcaption>
                          
 					</div>
-					<div class="item-2">
-                        <a href="renderer.html">
+					<div class="thumbnail">
+                        <a href="renderer.html?scene=ampleben_dorfkirche">
                             <img src="assets/mesh_thumbnails/ampleben_dorfkirche.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>Dorfkirche Ampleben</figcaption>
+                            <figcaption>Germany</figcaption>
+                            
 					</div>
-					<div class="item-3">
-                        <a href="renderer.html">
+					<div class="thumbnail">
+                        <a href="renderer.html?scene=ascheberg_kirchplatz">
                             <img src="assets/mesh_thumbnails/ascheberg_kirchplatz.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>Kirchplatz, Ascheberg</figcaption>
+                            <figcaption>Germany</figcaption>
+                          
 					</div>
-                    <div class="item-4">
-                        <a href="renderer.html">
-                            <img src="assets/mesh_thumbnails/basel_martinsgasse.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
+                    <div class="thumbnail">
+                        <a href="renderer.html?scene=basel_martinsgasse">
+                            <img src="assets/mesh_thumbnails/basel_martinsgasse.png" style="width: 98%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>Martinsgasse, Basel</figcaption>
+                            <figcaption>Switzerland</figcaption>
+                           
 					</div>
 
-                    <div class="item-5">
-                        <a href="renderer.html">
+                    <div class="thumbnail">
+                        <a href="renderer.html?scene=braunschweig_altstadt">
                             <img src="assets/mesh_thumbnails/braunschweig_altstadt.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>Braunschweig, Altstadt</figcaption>
+                            <figcaption>Germany</figcaption>
+                         
 					</div>
 
-                    <div class="item-6">
-                        <a href="renderer.html">
+                    <div class="thumbnail">
+                        <a href="renderer.html?scene=soissons_cathedral_interior">
                             <img src="assets/mesh_thumbnails/soissons_cathedral_interior.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>Soissons Cathedral</figcaption>
+                            <figcaption>France</figcaption>
+                          
 					</div>
 
-                    <div class="item-7">
-                        <a href="renderer.html">
+                    <div class="thumbnail">
+                        <a href="renderer.html?scene=stiftskirche_st_maria_magdalena_in_flaesheim">
                             <img src="assets/mesh_thumbnails/stiftskirche_st_maria_magdalena_in_flaesheim.png" style="width: 97%; height: auto; display: block;  margin-left: auto; margin-right: auto;">
                         </a>
-                            <figcaption>Basel, Switzerland</figcaption>
-                            <br>
+                            <figcaption>St. Maria-Magdalena </figcaption>
+                            <figcaption>Germany</figcaption>
+
 					</div>
 
 				</div>
