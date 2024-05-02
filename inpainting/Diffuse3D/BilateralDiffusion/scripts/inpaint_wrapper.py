@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import torch
 from os.path import join
-from ..main import instantiate_from_config
+from ..ldm.util import instantiate_from_config
 import torch.nn as nn
 import cv2
 from ..ldm.models.diffusion.ddim import DDIMSampler

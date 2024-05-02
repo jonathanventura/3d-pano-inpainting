@@ -162,3 +162,5 @@ cython_debug/
 
 ## VS Code
 .vscode/
+results/
+data/

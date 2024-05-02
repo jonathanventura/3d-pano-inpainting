@@ -1,8 +1,9 @@
 .vscode
 **.pyc
-**.png
+# **.png comment out for now
 **.jpg
 **.pth
 **.ckpt
 **.pth
 **.json
+**.zip

@@ -48,7 +48,8 @@ depth_feat_model.eval()
 depth_feat_model = depth_feat_model.to(device)
 print(f"Loading rgb model at {time.time()}")
 from BilateralDiffusion.scripts.inpaint_wrapper import DiffusionInpainter
-rgb_model = DiffusionInpainter('LatentDiffusion',device=device,dcnn_mode=config.get('dcnn_mode'))
+# rgb_model = DiffusionInpainter('LatentDiffusion',device=device,dcnn_mode=config.get('dcnn_mode'))
+rgb_model = DiffusionInpainter('BilateralDiffusion',device=device,dcnn_mode=config.get('dcnn_mode'))
 
 videos = dataset(args.data_dir,hw=(256,384))
 
@@ -77,11 +78,11 @@ for cnt, data in enumerate(videos):
         config['gray_image'] = False
 
     depth = data['src_depth'] / 120
-    disp = data['src_disp'].astype(np.float32)
-    disp = disp - disp.min()
-    disp = cv2.blur(disp / disp.max(), ksize=(3, 3)) * disp.max()
-    disp = (disp / disp.max()) * 3.0
-    depth = 1. / np.maximum(disp, 0.05)
+    #disp = data['src_disp'].astype(np.float32)
+    #disp = disp - disp.min()
+    #disp = cv2.blur(disp / disp.max(), ksize=(3, 3)) * disp.max()
+    #disp = (disp / disp.max()) * 3.0
+    #depth = 1. / np.maximum(disp, 0.05)
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
 
     if not(config['load_ply'] and os.path.exists(mesh_fi)):

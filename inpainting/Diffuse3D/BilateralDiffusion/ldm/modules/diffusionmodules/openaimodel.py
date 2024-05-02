@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .dcnn import DConv2d
 
-from ldm.modules.diffusionmodules.util import (
+from BilateralDiffusion.ldm.modules.diffusionmodules.util import (
     checkpoint,
     conv_nd,
     linear,
@@ -18,7 +18,7 @@ from ldm.modules.diffusionmodules.util import (
     normalization,
     timestep_embedding,
 )
-from ldm.modules.attention import SpatialTransformer
+from BilateralDiffusion.ldm.modules.attention import SpatialTransformer
 
 
 # dummy replace

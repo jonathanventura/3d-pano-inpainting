@@ -1,6 +1,8 @@
+# I replaced every mention of LatentDiffusion with
+# BilateralDiffusion
 model:
   base_learning_rate: 1.0e-06
-  target: LatentDiffusion.ldm.models.diffusion.ddpm.LatentDiffusion
+  target: BilateralDiffusion.ldm.models.diffusion.ddpm.LatentDiffusion
   params:
     linear_start: 0.0015
     linear_end: 0.0205
@@ -14,7 +16,7 @@ model:
     concat_mode: true
     monitor: val/loss
     scheduler_config:
-      target: LatentDiffusion.ldm.lr_scheduler.LambdaWarmUpCosineScheduler
+      target: BilateralDiffusion.ldm.lr_scheduler.LambdaWarmUpCosineScheduler
       params:
         verbosity_interval: 0
         warm_up_steps: 1000
@@ -23,7 +25,7 @@ model:
         lr_max: 0.1
         lr_min: 0.0001
     unet_config:
-      target: LatentDiffusion.ldm.modules.diffusionmodules.openaimodel.UNetModel
+      target: BilateralDiffusion.ldm.modules.diffusionmodules.openaimodel.UNetModel
       params:
         image_size: 64
         in_channels: 7
@@ -43,7 +45,7 @@ model:
         resblock_updown: true
     
     first_stage_config:
-      target: LatentDiffusion.ldm.models.autoencoder.VQModelInterface
+      target: BilateralDiffusion.ldm.models.autoencoder.VQModelInterface
       params:
         embed_dim: 3
         n_embed: 8192
@@ -64,5 +66,5 @@ model:
           attn_resolutions: []
           dropout: 0.0
         lossconfig:
-          target: LatentDiffusion.ldm.modules.losses.contperceptual.DummyLoss
+          target: BilateralDiffusion.ldm.modules.losses.contperceptual.DummyLoss
     cond_stage_config: __is_first_stage__

@@ -2,7 +2,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import _depthconv_ext as depthconv
+#import _depthconv_ext as depthconv
+from depthaware.models.ops.depthconv.functional import DepthconvFunction
 
 from torch.autograd import Function
 from torch.nn.modules.utils import _pair
@@ -24,11 +25,11 @@ def depth_conv(input,
     f = DepthconvFunction()
     # print bias
     if isinstance(bias, torch.nn.Parameter):
-        return f.apply(input, depth, weight, _pair(stride), _pair(padding), _pair(dilation), bias)
+        return f.apply(input, depth, weight, bias, .5, _pair(stride), _pair(padding), _pair(dilation))
     else:
-        return f.apply(input, depth, weight, _pair(stride), _pair(padding), _pair(dilation))
+        return f.apply(input, depth, weight, None, .5, _pair(stride), _pair(padding), _pair(dilation))
 
-class DepthconvFunction(Function):
+class DepthconvFunction_OLD_DONT_USE(Function):
     @staticmethod
     def forward(ctx, input, depth, weight, stride, padding, dilation, bias = None):
         # print('forward')
