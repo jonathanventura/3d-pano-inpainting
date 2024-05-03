@@ -77,12 +77,12 @@ for cnt, data in enumerate(videos):
     else:
         config['gray_image'] = False
 
-    depth = data['src_depth'] / 120
-    #disp = data['src_disp'].astype(np.float32)
-    #disp = disp - disp.min()
-    #disp = cv2.blur(disp / disp.max(), ksize=(3, 3)) * disp.max()
-    #disp = (disp / disp.max()) * 3.0
-    #depth = 1. / np.maximum(disp, 0.05)
+    # depth = data['src_depth'] / 120
+    disp = data['src_disp'].astype(np.float32)
+    disp = disp - disp.min()
+    disp = cv2.blur(disp / disp.max(), ksize=(3, 3)) * disp.max()
+    disp = (disp / disp.max()) * 3.0
+    depth = 1. / np.maximum(disp, 0.05)
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
 
     if not(config['load_ply'] and os.path.exists(mesh_fi)):

@@ -25,9 +25,9 @@ def depth_conv(input,
     f = DepthconvFunction()
     # print bias
     if isinstance(bias, torch.nn.Parameter):
-        return f.apply(input, depth, weight, bias, .5, _pair(stride), _pair(padding), _pair(dilation))
+        return f.apply(input, depth, weight, bias, 1, _pair(stride), _pair(padding), _pair(dilation))
     else:
-        return f.apply(input, depth, weight, None, .5, _pair(stride), _pair(padding), _pair(dilation))
+        return f.apply(input, depth, weight, None, 1, _pair(stride), _pair(padding), _pair(dilation))
 
 class DepthconvFunction_OLD_DONT_USE(Function):
     @staticmethod

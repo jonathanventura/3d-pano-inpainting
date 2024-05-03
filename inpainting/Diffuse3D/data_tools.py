@@ -14,6 +14,7 @@ def dataset(data_dir, hw=(256, 384)):
     Yields:
         dict: A dictionary containing data for each scene.
     """
+    H, W = hw
     for scene_dir in os.listdir(data_dir):
         scene_path = os.path.join(data_dir, scene_dir)
         if not os.path.isdir(scene_path):
@@ -30,15 +31,15 @@ def dataset(data_dir, hw=(256, 384)):
                 data['src_img'] = src_img
 
         # Load source depth map
-        src_depth_path = os.path.join(scene_path, 'src_depth.png')
-        if os.path.exists(src_depth_path):
-            src_depth = cv2.imread(src_depth_path, cv2.IMREAD_UNCHANGED)
-            if src_depth is not None:
-                src_depth = cv2.resize(src_depth, hw)
-                data['src_depth'] = src_depth
+        # src_depth_path = os.path.join(scene_path, 'src_depth.png')
+        # if os.path.exists(src_depth_path):
+        #     src_depth = cv2.imread(src_depth_path, cv2.IMREAD_UNCHANGED)
+        #     if src_depth is not None:
+        #         src_depth = cv2.resize(src_depth, hw)
+        #         data['src_depth'] = src_depth
 
-	# Load source disparity map
-        src_disp_path = os.path.join(scene_path, 'src_disp.png')
+	    # Load source disparity map
+        src_disp_path = os.path.join(scene_path, 'src_depth.png')
         if os.path.exists(src_disp_path):
             src_disp = cv2.imread(src_disp_path, cv2.IMREAD_UNCHANGED)
             if src_disp is not None:
@@ -56,10 +57,13 @@ def dataset(data_dir, hw=(256, 384)):
                 K = np.array(K_data)
                 data['K'] = K
         else:
-            default_K = np.array([[300, 0, 192],   # Focal length in pixel units (300 pixels)
-                 [0, 300, 128],   # Principal point (center of the image) (192, 128)
-                 [0, 0, 1]])      # Perspective projection
+            default_K = np.array([[max(H, W), 0, W//2], 
+                                [0, max(H, W), H//2], 
+                                [0, 0, 1]]).astype(np.float32)
             data['K'] = default_K
+        if data['K'].max() > 1:
+            data['K'][0, :] = data['K'][0, :] / float(W)
+            data['K'][1, :] = data['K'][1, :] / float(H)
 
         # Load target images and transformation matrices
         tgt_list = []
