@@ -1,0 +1,42 @@
+0001_rgb.jpg 
+The Replica Dataset: A Digital Replica of Indoor Spaces
+https://github.com/facebookresearch/Replica-Dataset
+
+360_0265.png
+Nam Nguyen
+Creative Commons Attribution-Share Alike 4.0 International
+
+360_0277.png
+Nam Nguyen
+Creative Commons Attribution-Share Alike 4.0 International
+
+ampleben_dorfkirche_panorama.png
+DerMische
+Creative Commons Attribution-Share Alike 4.0 International
+https://commons.wikimedia.org/wiki/File:Ampleben_Dorfkirche_Panorama.jpg
+
+ascheberg_kirchplatz_panorama.png
+DerMische
+Creative Commons Attribution-Share Alike 4.0 International
+https://commons.wikimedia.org/wiki/File:Ascheberg_Kirchplatz_Panorama.jpg
+
+basel_martinsgasse_panorama.png
+DerMische
+Creative Commons Attribution-Share Alike 4.0 International
+https://commons.wikimedia.org/wiki/File:Basel_Martinsgasse_Panorama.jpg
+
+basel_stapfelberg_panorama.png
+DerMische
+Creative Commons Attribution-Share Alike 4.0 International
+https://commons.wikimedia.org/wiki/File:Basel_Stapfelberg_Panorama.jpg
+
+braunschweig_altstadt_panorama.png
+DerMische
+Creative Commons Attribution-Share Alike 4.0 International
+https://commons.wikimedia.org/wiki/File:Braunschweig_Altstadt_Panorama.jpg
+
+soissons_cathedral_interior.png
+Diliff
+Creative Commons Attribution-Share Alike 3.0 Unported license
+https://en.wikipedia.org/wiki/File:Soissons_Cathedral_Interior_360x180,_Picardy,_France_-_Diliff.jpg
+
