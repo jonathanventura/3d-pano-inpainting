@@ -52,3 +52,5 @@ RUN cd ./code/cpp && mkdir build && cd build && cmake ..  -DCMAKE_BUILD_TYPE=Rel
 RUN cd ./code/cpp/python/ && python3 ./setup.py build && python3 ./setup.py bdist_wheel && pip3 install dist/instaOmniDepth-0.1.0-cp38-cp38-linux_x86_64.whl
 
 RUN chmod -R a+rwX /monodepth
+
+ENV TRANSFORMERS_CACHE=/cache
