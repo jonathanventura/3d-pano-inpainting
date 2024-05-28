@@ -18,7 +18,7 @@ git clone https://github.com/compphoto/BoostingMonocularDepth.git
 mkdir -p BoostingMonocularDepth/pix2pix/checkpoints/mergemodel/
 
 echo "downloading mergenet weights ..."
-wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/latest_net_G.pth
+wget https://huggingface.co/spaces/Epoching/3D_Photo_Inpainting/resolve/main/latest_net_G.pth?download=true
 mv latest_net_G.pth BoostingMonocularDepth/pix2pix/checkpoints/mergemodel/
 wget https://github.com/intel-isl/MiDaS/releases/download/v2/model-f46da743.pt
 mv model-f46da743.pt BoostingMonocularDepth/midas/model.pt
