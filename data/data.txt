@@ -1,7 +1,1 @@
-/monodepth/data/ampleben_dorfkirche_panorama.png None
-/monodepth/data/ascheberg_kirchplatz_panorama.png None
-/monodepth/data/basel_martinsgasse_panorama.png None
 /monodepth/data/basel_stapfelberg_panorama.png None
-/monodepth/data/braunschweig_altstadt_panorama.png None
-/monodepth/data/360_0265.png None
-/monodepth/data/360_0277.png None
