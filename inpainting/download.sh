@@ -4,11 +4,10 @@ fb_status=$(wget --spider -S https://filebox.ece.vt.edu/ 2>&1 | grep  "HTTP/1.1 
 mkdir checkpoints
 
 echo "downloading from filebox ..."
-wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/color-model.pth
-wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/depth-model.pth
-wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/edge-model.pth
-wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/model.pt
-
+wget https://huggingface.co/spaces/Epoching/3D_Photo_Inpainting/resolve/main/checkpoints/color-model.pth?download=true
+wget https://huggingface.co/spaces/Epoching/3D_Photo_Inpainting/resolve/main/checkpoints/depth-model.pth?download=true
+wget https://huggingface.co/spaces/Epoching/3D_Photo_Inpainting/resolve/main/checkpoints/edge-model.pth?download=true
+wget https://huggingface.co/spaces/Epoching/3D_Photo_Inpainting/resolve/main/MiDaS/model.pt?download=true
 mv color-model.pth checkpoints/.
 mv depth-model.pth checkpoints/.
 mv edge-model.pth checkpoints/.
