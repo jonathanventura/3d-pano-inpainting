@@ -308,6 +308,8 @@ def clean_far_edge_new(input_edge, end_depth_maps, mask, context, global_mesh, i
                                             if xx[0] >= 0 and xx[0] < fpath_map.shape[0] and xx[1] >= 0 and xx[1] < fpath_map.shape[1]]
                         if np.all([(fpath_map[nlne[0], nlne[1]] == -1) for nlne in new_loc_nes]) != True:
                             break
+                        if new_loc[1] >= npath_map.shape[1]:
+                            continue
                         if npath_map[new_loc[0], new_loc[1]] != -1:
                             if npath_map[new_loc[0], new_loc[1]] != edge_id:
                                 break_flag = True
