@@ -23,6 +23,7 @@ from MiDaS.monodepth_net import MonoDepthNet
 import MiDaS.MiDaS_utils as MiDaS_utils
 from bilateral_filtering import sparse_bilateral_filtering
 from skimage import color
+from diffusers import StableDiffusionInpaintPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
@@ -99,12 +100,20 @@ for idx in tqdm(range(len(sample_list))):
         depth_feat_model.eval()
         depth_feat_model = depth_feat_model.to(device)
         print(f"Loading rgb model at {time.time()}")
-        rgb_model = Inpaint_Color_Net()
-        rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
-                                     map_location=torch.device(device))
-        rgb_model.load_state_dict(rgb_feat_weight)
-        rgb_model.eval()
-        rgb_model = rgb_model.to(device)
+        if config['use_stable_diffusion']:
+            device = "cuda"
+            model_path = "runwayml/stable-diffusion-inpainting"
+            rgb_model = StableDiffusionInpaintPipeline.from_pretrained(
+                    model_path,
+                    torch_dtype=torch.float16,
+                ).to(device)
+        else:
+            rgb_model = Inpaint_Color_Net()
+            rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
+                                        map_location=torch.device(device))
+            rgb_model.load_state_dict(rgb_feat_weight)
+            rgb_model.eval()
+            rgb_model = rgb_model.to(device)
         graph = None
 
 

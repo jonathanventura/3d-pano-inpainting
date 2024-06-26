@@ -25,6 +25,8 @@ import transforms3d
 import random
 from functools import reduce
 import math
+from diffusers import StableDiffusionInpaintPipeline
+
 
 def create_mesh(depth, image, int_mtx, config):
     H, W, C = image.shape
@@ -1408,6 +1410,65 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
 
     return context_ccs, mask_ccs, broken_mask_ccs, edge_ccs, erode_context_ccs, invalid_extend_edge_ccs, edge_maps, extend_context_ccs, extend_edge_ccs, extend_erode_context_ccs
 
+def ceil_modulo(x, mod):
+    if x % mod == 0:
+        return x
+    return (x // mod + 1) * mod
+
+def unpad_img_to_modulo(img, max_pad, H_original, W_original):
+    _,_, H, W = img.shape
+    if H != max_pad:
+        img = torch.nn.functional.interpolate(img, (max_pad, max_pad),
+                                                                 mode='bilinear', align_corners=True)
+
+    img = img[:, :, :H_original, :W_original]
+    return img
+
+def pad_img_to_modulo(img, mod, value = 0):
+    _, channels, height, width = img.shape
+    out_height = ceil_modulo(height, mod)
+    out_width = ceil_modulo(width, mod)
+    max_pad = max(out_height, out_width)
+
+    ## Pad width and height to get a squared image of max_pad x max_pad
+    img_padded =  torch.nn.functional.pad(
+        img,
+        (0, max_pad -width, 0, max_pad - height),
+        mode="constant", value = value
+    )
+    ## If image width and height are higher than 512, downsample the image to match 512x512
+    if max_pad > mod:
+        img_padded = torch.nn.functional.interpolate(img_padded, (mod, mod),
+                                                                 mode='bilinear', align_corners=True)
+    return img_padded, max_pad
+
+def inpaint_Stable_Diffusion(hole, context, image, pipe, generator, guidance_scale, num_samples):
+    image_padded, max_pad = pad_img_to_modulo(image, 512, 0)
+    image_padded_scaled = image_padded * 2.0 - 1.0
+
+    hole_padded, _ = pad_img_to_modulo(hole, 512, 0)
+
+    context_padded, _ =  pad_img_to_modulo(context, 512, 0)
+    inpainting_mask_padded = 1.0 - context_padded
+    print(hole_padded.shape)
+    print(inpainting_mask_padded.shape)
+    print(image_padded_scaled.shape)
+    images = pipe(
+        prompt='',
+        image=image_padded_scaled,
+        mask_image=inpainting_mask_padded,
+        guidance_scale=guidance_scale,
+        generator=generator,
+        num_images_per_prompt=num_samples,
+        output_type = 'np'
+    ).images
+    img_inpainted_padded = torch.from_numpy(images)
+    img_inpainted_padded = torch.permute(img_inpainted_padded, [0, 3, 1, 2])
+    B, C, H_original , W_original = image.shape
+    img_inpainted = unpad_img_to_modulo(img_inpainted_padded, max_pad, H_original, W_original)
+    img_inpainted = img_inpainted * hole + image*context
+    return img_inpainted
+
 def DL_inpaint_edge(mesh,
                     info_on_pix,
                     config,
@@ -1565,6 +1626,9 @@ def DL_inpaint_edge(mesh,
                             edges_infos[(end_mx, end_my)] = []
                         edges_infos[(end_mx, end_my)].append(new_edge_info)
                         edges_in_mask[edge_id].add((end_mx, end_my))
+    guidance_scale=7.5
+    num_samples = 1
+    generator = torch.Generator(device="cuda").manual_seed(0)
     for edge_id, (context_cc, mask_cc, erode_context_cc, extend_context_cc, edge_cc) in enumerate(zip(context_ccs, mask_ccs, erode_context_ccs, extend_context_ccs, edge_ccs)):
         if len(specific_edge_id) > 0:
             if edge_id not in specific_edge_id:
@@ -1722,12 +1786,21 @@ def DL_inpaint_edge(mesh,
         resize_mask = open_small_mask(resize_rgb_dict['mask'], resize_rgb_dict['context'], 3, 41)
         specified_hole = resize_mask
         with torch.no_grad():
-            rgb_output = rgb_model.forward_3P(specified_hole,
-                                            resize_rgb_dict['context'],
-                                            resize_rgb_dict['rgb'],
-                                            resize_rgb_dict['edge'],
-                                            unit_length=128,
-                                            cuda=device)
+            if config['use_stable_diffusion']:
+                rgb_output = inpaint_Stable_Diffusion(specified_hole, 
+                                                    resize_rgb_dict['context'],
+                                                    resize_rgb_dict['rgb'],
+                                                    rgb_model, 
+                                                    generator,
+                                                    guidance_scale, 
+                                                    num_samples)
+            else:
+                rgb_output = rgb_model.forward_3P(specified_hole,
+                                                resize_rgb_dict['context'],
+                                                resize_rgb_dict['rgb'],
+                                                resize_rgb_dict['edge'],
+                                                unit_length=128,
+                                                cuda=device)
             rgb_output = rgb_output.cpu()
             if config.get('gray_image') is True:
                 rgb_output = rgb_output.mean(1, keepdim=True).repeat((1,3,1,1))
