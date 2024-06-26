@@ -125,9 +125,15 @@
 				controls.minDistance = 1;
 				controls.maxDistance = 3;
 
+                controls.addEventListener( 'end', onInteractionEnd );
+
 				window.addEventListener( 'resize', onWindowResize );
 
 			}
+
+            function onInteractionEnd() {
+                controls.autoRotate = false;
+            }
 
 			function onWindowResize() {
 
