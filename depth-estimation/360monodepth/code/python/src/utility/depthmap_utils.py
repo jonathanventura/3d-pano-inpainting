@@ -195,13 +195,12 @@ def DepthAnythingV2(rgb_image_data_list):
     # model.load_state_dict(torch.load('depth-estimation/360monodepth/code/python/src/utility/checkpoints/depth_anything_v2_vitl.pth', map_location=device))
     
     # use hugging face library transformers to import small ver
-    image_processor = AutoImageProcessor.from_pretrained("pcuenq/Depth-Anything-V2-Small-hf")
-    model = AutoModelForDepthEstimation.from_pretrained("pcuenq/Depth-Anything-V2-Small-hf")
+    image_processor = AutoImageProcessor.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
+    model = AutoModelForDepthEstimation.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
     model = model.to(device)
     model.eval()
 
     for index, image in enumerate(rgb_image_data_list):
-
         # prepare image for the model
         inputs = image_processor(images=image, return_tensors="pt")
         inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
@@ -213,7 +212,7 @@ def DepthAnythingV2(rgb_image_data_list):
         # interpolate to original size
         prediction = torch.nn.functional.interpolate(
             predicted_depth.unsqueeze(1),
-            size=image.size[:2],
+            size=image.shape[-2:],
             mode="bicubic",
             align_corners=False,
         ).squeeze().cpu().numpy()
@@ -259,7 +258,7 @@ def DepthAnything(rgb_image_data_list):
         # interpolate to original size
         prediction = torch.nn.functional.interpolate(
             predicted_depth.unsqueeze(1),
-            size=image.shape[::-1],
+            size=image.shape[:2],
             mode="bicubic",
             align_corners=False,
         ).squeeze()
