@@ -190,11 +190,7 @@ def DepthAnythingV2(rgb_image_data_list):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    # Initialize the new model (large)
-    # model = DepthAnythingV2(encoder='vitl', features=256, out_channels=[256, 512, 1024, 1024])
-    # model.load_state_dict(torch.load('depth-estimation/360monodepth/code/python/src/utility/checkpoints/depth_anything_v2_vitl.pth', map_location=device))
-    
-    # use hugging face library transformers to import small ver
+    # use hugging face library transformers to import large ver
     image_processor = AutoImageProcessor.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
     model = AutoModelForDepthEstimation.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
     model = model.to(device)
@@ -212,7 +208,7 @@ def DepthAnythingV2(rgb_image_data_list):
         # interpolate to original size
         prediction = torch.nn.functional.interpolate(
             predicted_depth.unsqueeze(1),
-            size=image.shape[-2:],
+            size=image.shape[:2], # is the index correct?
             mode="bicubic",
             align_corners=False,
         ).squeeze().cpu().numpy()
