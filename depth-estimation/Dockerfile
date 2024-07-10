@@ -53,4 +53,4 @@ RUN cd ./code/cpp/python/ && python3 ./setup.py build && python3 ./setup.py bdis
 
 RUN chmod -R a+rwX /monodepth
 
-ENV HF_HOME monodepth/cache
+ENV HF_HOME /monodepth/cache
