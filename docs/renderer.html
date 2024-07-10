@@ -14,6 +14,18 @@
                 top: 10px;
                 margin-left: -250px;
             }
+			#buttons {
+				position: absolute;
+				top: 20px;
+				right: 0px;
+				padding: 10px 10px;
+				background-color: rgba(255, 255, 255, 0.3);
+				color: white;
+				border: none;
+				cursor: pointer;
+				font-size: 16px;
+				margin-left: 350px;
+			}
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 		<script>
@@ -31,6 +43,11 @@
         </script>
 	</head>
 	<body>
+		<div id="buttons">
+			<button id="midas">Midas</button>
+			<button id="dav1">Depth Anything V1</button>
+			<button id="dav2">Depth Anything V2</button>
+		</div>
         <progress value="0" max="100" id="progressBar"></progress>
 		<div id="container"></div>
 
@@ -45,6 +62,8 @@
 			import Stats from 'three/addons/libs/stats.module.js';
 
 			let camera, scene, renderer, sphere, clock, controls;
+			let currentSceneIndex = 0; /* start on midas by default */
+			let scenes = []; /* array to store diff vers of same scene (midas, v1, v2) */
 
             const stats = new Stats();
             container.appendChild( stats.dom );
@@ -69,13 +88,25 @@
 				scene.add( camera );
 
 				const urlParams = new URLSearchParams(window.location.search);
-				const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
+				const scene_name = urlParams.get('scene');
 
 				const loader = new GLTFLoader();
-                loader.load( '../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
-                    function ( glb ) {
-                        console.log(glb.scene);
-                        var geometry;
+
+				/* get midas, v1, v2 file names for location from s3 bucket */
+				const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+					'../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+					'../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
+				]
+
+				// const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled.glb',
+				// 	'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled_v1.glb',
+				// 	'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled_v2.glb'
+				// ]
+
+				files.forEach((file, index) => {
+					loader.load(file, function(glb) {
+						console.log(glb.scene);
+						var geometry;
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
                                 geometry = child.geometry;
@@ -83,24 +114,30 @@
                         });
                         const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
                         const mesh = new THREE.Mesh( geometry, material );
+;
+						scenes[index] = mesh;
+						if (index === 0) {
+							scene.add(mesh); // Add the first scene by default
+						}
+					},
 
-                        scene.add(mesh);
-                        progressBar.style.display = 'none'
-                    },
-                
+					function ( xhr ) {
+						if ( xhr.lengthComputable ) {
+							var percentComplete = (xhr.loaded / xhr.total) * 100;
+							progressBar.value = percentComplete;
+							progressBar.style.display = 'block';
+						}
 
-                    function ( xhr ) {
-                        if ( xhr.lengthComputable ) {
-                            var percentComplete = (xhr.loaded / xhr.total) * 100;
-                            progressBar.value = percentComplete;
-                            progressBar.style.display = 'block';
+						if (percentComplete === 100) {
+                            progressBar.style.display = 'none';
                         }
-                    },
-                    function ( error ) {
-                        console.log( 'An error happened' );
-                        console.log( error );
-                    }
-                );
+					},
+
+					function ( error ) {
+						console.log( 'An error happened' );
+						console.log( error );
+					});
+				});
 
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -127,8 +164,8 @@
 
 				controls.addEventListener( 'end', onInteractionEnd );
 
-				window.addEventListener( 'resize', onWindowResize );
-
+				window.addEventListener( 'resize', onWindowResize );	
+    
 			}
 
 			function onInteractionEnd() {
@@ -160,6 +197,39 @@
 				renderer.render( scene, camera );
 
 			}
+
+			document.getElementById('midas').addEventListener('click', function() {
+            	// alert('Midas clicked!');
+				if (currentSceneIndex == 0) {
+					/*do nothing */
+				} else {
+					scene.remove(scenes[currentSceneIndex]);
+					currentSceneIndex = 0;
+					scene.add(scenes[currentSceneIndex]);
+				}
+        	});
+
+			document.getElementById('dav1').addEventListener('click', function() {
+            	// alert('Depth Anything V1 clicked!');
+				if (currentSceneIndex == 1) {
+					/*do nothing */
+				} else {
+					scene.remove(scenes[currentSceneIndex]);
+					currentSceneIndex = 1;
+					scene.add(scenes[currentSceneIndex]);
+				}
+        	});
+
+			document.getElementById('dav2').addEventListener('click', function() {
+            	// alert('Depth Anything V2 clicked!');
+				if (currentSceneIndex == 2) {
+					/*do nothing */
+				} else {
+					scene.remove(scenes[currentSceneIndex]);
+					currentSceneIndex = 2;
+					scene.add(scenes[currentSceneIndex]);
+				}
+        	});
 
 		</script>
 	</body>
