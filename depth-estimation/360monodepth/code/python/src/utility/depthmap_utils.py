@@ -173,6 +173,55 @@ def run_persp_monodepth(rgb_image_data_list, persp_monodepth, use_large_model=Tr
         return boosting_monodepth(rgb_image_data_list)
     if persp_monodepth == "depthanything":
         return DepthAnything(rgb_image_data_list)
+    if persp_monodepth == "depthanythingv2":
+        return DepthAnythingV2(rgb_image_data_list)
+
+
+def DepthAnythingV2(rgb_image_data_list):
+    import os
+    import cv2
+    from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+    import torch
+    import numpy as np
+
+    print("using depth anything v2")
+
+    disparity_map_list = []
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    # use hugging face library transformers to import large ver
+    image_processor = AutoImageProcessor.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
+    model = AutoModelForDepthEstimation.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
+    model = model.to(device)
+    model.eval()
+
+    for index, image in enumerate(rgb_image_data_list):
+        # prepare image for the model
+        inputs = image_processor(images=image, return_tensors="pt")
+        inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            predicted_depth = outputs.predicted_depth
+
+        # interpolate to original size
+        prediction = torch.nn.functional.interpolate(
+            predicted_depth.unsqueeze(1),
+            size=image.shape[:2], # is the index correct?
+            mode="bicubic",
+            align_corners=False,
+        ).squeeze().cpu().numpy()
+
+        disparity_map_list.append(prediction)
+
+        del prediction
+        torch.cuda.empty_cache()
+
+        if index % 10 == 0:
+            print(f"DepthAnythingV2 estimated {index} rgb image's disparity map.")
+
+    return disparity_map_list
 
 
 def DepthAnything(rgb_image_data_list):
