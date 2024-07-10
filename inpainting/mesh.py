@@ -25,7 +25,7 @@ import transforms3d
 import random
 from functools import reduce
 import math
-from diffusers import StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
 
 
 def create_mesh(depth, image, int_mtx, config):
@@ -1258,6 +1258,7 @@ def context_and_holes(mesh, edge_ccs, config, specific_edge_id, specific_edge_lo
             context_size = get_valid_size(depth_dict['context'])
             context_size = dilate_valid_size(context_size, depth_dict['context'], dilate=[20, 20])
             union_size = size_operation(mask_size, context_size, operation='+')
+            npz_count = 0
             depth_dict = depth_inpainting(None, None, None, None, mesh, config, union_size, depth_feat_model, None, given_depth_dict=depth_dict, spdb=False)
             near_depth_map, raw_near_depth_map = np.zeros((mesh.graph['H'], mesh.graph['W'])), np.zeros((mesh.graph['H'], mesh.graph['W']))
             filtered_comp_far_cc, filtered_accomp_near_cc = set(), set()
@@ -1415,12 +1416,13 @@ def ceil_modulo(x, mod):
         return x
     return (x // mod + 1) * mod
 
-def unpad_img_to_modulo(img, max_pad, H_original, W_original):
+def unpad_img_to_modulo(img, H_original, W_original):
     _,_, H, W = img.shape
+    """
     if H != max_pad:
         img = torch.nn.functional.interpolate(img, (max_pad, max_pad),
                                                                  mode='bilinear', align_corners=True)
-
+    """
     img = img[:, :, :H_original, :W_original]
     return img
 
@@ -1428,23 +1430,25 @@ def pad_img_to_modulo(img, mod, value = 0):
     _, channels, height, width = img.shape
     out_height = ceil_modulo(height, mod)
     out_width = ceil_modulo(width, mod)
-    max_pad = max(out_height, out_width)
 
     ## Pad width and height to get a squared image of max_pad x max_pad
     img_padded =  torch.nn.functional.pad(
         img,
-        (0, max_pad -width, 0, max_pad - height),
+        (0, out_width -width, 0, out_height - height),
         mode="constant", value = value
     )
     ## If image width and height are higher than 512, downsample the image to match 512x512
+    """
     if max_pad > mod:
         img_padded = torch.nn.functional.interpolate(img_padded, (mod, mod),
                                                                  mode='bilinear', align_corners=True)
-    return img_padded, max_pad
+    """
+    return img_padded
 
-def inpaint_Stable_Diffusion(hole, context, image, pipe, generator, guidance_scale, num_samples):
-    image_padded, max_pad = pad_img_to_modulo(image, 512, 0)
-    image_padded_scaled = image_padded * 2.0 - 1.0
+def inpaint_Stable_Diffusion_window(hole, context, image, condition_image, pipe, generator, guidance_scale, num_samples, stride, config):
+    """
+    image_padded_scaled, max_pad = pad_img_to_modulo(image, 512, 0)
+    #image_padded_scaled = image_padded * 2.0 - 1.0
 
     hole_padded, _ = pad_img_to_modulo(hole, 512, 0)
 
@@ -1457,15 +1461,128 @@ def inpaint_Stable_Diffusion(hole, context, image, pipe, generator, guidance_sca
         prompt='',
         image=image_padded_scaled,
         mask_image=inpainting_mask_padded,
-        guidance_scale=guidance_scale,
-        generator=generator,
-        num_images_per_prompt=num_samples,
+        strength=0.95,
         output_type = 'np'
     ).images
     img_inpainted_padded = torch.from_numpy(images)
     img_inpainted_padded = torch.permute(img_inpainted_padded, [0, 3, 1, 2])
     B, C, H_original , W_original = image.shape
     img_inpainted = unpad_img_to_modulo(img_inpainted_padded, max_pad, H_original, W_original)
+    img_inpainted = img_inpainted * hole + image*context
+    """
+    B, C, H, W = image.shape
+    chip_size = 512
+    stride = 256
+    img_chips = []
+    context_chips = []
+    hole_chips = []
+    inpainted_mask_chips = []
+    condition_image_chips = []
+    ## These clones will be modifed during inpainting step
+    image_clone = image.detach().clone()
+    # inpainting_mask_clone = inpainting_mask.detach().clone()
+    context_clone = context.detach().clone()
+    hole_clone = hole.detach().clone()
+    condition_image_clone = condition_image.detach().clone()
+
+    generator = torch.Generator(device="cuda").manual_seed(0) # change the seed to get different results
+    
+    # For each window of 512x512
+    for row in range(0, H, chip_size - stride):
+        for col in range(0, W, chip_size - stride):
+            # Get a small window from big image
+            hole_chip =  hole_clone[:, :, row: row + chip_size, col:col+chip_size]
+            # If there is no region to inpaint, then skip
+            if torch.all(hole_chip == 0):
+                continue
+            context_chip = context_clone[:, :, row: row + chip_size, col:col+chip_size]
+            image_chip = image_clone[:, :, row: row + chip_size, col:col+chip_size]
+            condition_image_chip =  condition_image_clone[:, :, row: row + chip_size, col:col+chip_size]
+
+            # Initialize new buffers (512x512)
+            new_image_chip = torch.zeros((image_clone.shape[0], image.shape[1] , chip_size, chip_size))
+            new_hole_chip  =  torch.zeros((hole_clone.shape[0], hole.shape[1] , chip_size, chip_size))
+            new_context_chip = torch.zeros((context_clone.shape[0], context.shape[1] , chip_size, chip_size))
+            new_condition_image_chip = torch.zeros((condition_image_clone.shape[0], condition_image_clone.shape[1] , chip_size, chip_size))
+
+            # copy data to new buffers
+            image_chip_dimension = image_chip.shape[-2:] ## The dimension of the original cut
+            new_image_chip[:,:,:image_chip_dimension[0], :image_chip_dimension[1]] = image_chip
+            new_hole_chip[:,:,:image_chip_dimension[0], :image_chip_dimension[1]] = hole_chip
+            new_context_chip[:,:,:image_chip_dimension[0], :image_chip_dimension[1]] = context_chip
+            new_inpainting_mask_chip = 1 - new_context_chip
+            new_condition_image_chip[:,:,:image_chip_dimension[0], :image_chip_dimension[1]] = condition_image_chip
+            new_condition_image_chip = new_condition_image_chip.expand(-1, 3, -1, -1)
+
+
+            if config["use_controlnet"]:
+                new_inpainted_chip = pipe(
+                    prompt='',
+                    image=new_image_chip,
+                    control_image=new_condition_image_chip,
+                    mask_image= new_inpainting_mask_chip,
+                    output_type = 'np',
+                ).images
+            else:
+                new_inpainted_chip = pipe(
+                    prompt='',
+                    image=new_image_chip,
+                    mask_image= new_inpainting_mask_chip,
+                    generator = generator,
+                    num_samples=num_samples,
+                    output_type = 'np',
+                ).images
+
+
+
+            new_inpainted_chip = torch.from_numpy(new_inpainted_chip)
+            new_inpainted_chip = torch.permute(new_inpainted_chip, [0, 3, 1, 2])
+            new_inpainted_chip = new_inpainted_chip * new_hole_chip + new_image_chip*new_context_chip
+
+            ## Update the clones to reflect the current progress
+            image_clone[:, :, row: row +  image_chip_dimension[0], col:col+image_chip_dimension[1]] \
+                = new_inpainted_chip[:,:, :image_chip_dimension[0],  :image_chip_dimension[1]]
+            context_clone[:, :, row: row +  image_chip_dimension[0], col:col+image_chip_dimension[1]] \
+                = new_context_chip[:,:, :image_chip_dimension[0],  :image_chip_dimension[1]] \
+                + new_hole_chip[:,:, :image_chip_dimension[0],  :image_chip_dimension[1]]
+            hole_clone[:, :, row: row +  image_chip_dimension[0], col:col+image_chip_dimension[1]] \
+                = 0
+    return image_clone
+
+def inpaint_Stable_Diffusion(hole, context, image, condition_image, pipe, generator, guidance_scale, num_samples, config):
+    image_padded = pad_img_to_modulo(image, 8, 0)
+    hole_padded = pad_img_to_modulo(hole, 8, 0)
+    context_padded =  pad_img_to_modulo(context, 8, 0)
+    inpainting_mask_padded = 1.0 - context_padded
+
+    condition_image = condition_image.expand(-1, 3, -1, -1)
+
+    if config["use_controlnet"]:
+        images = pipe(
+        height = image_padded.shape[-2],
+        width = image_padded.shape[-1],
+        prompt='',
+        image=image_padded,
+        control_image=condition_image,
+        mask_image= inpainting_mask_padded,
+        generator = generator,
+        output_type = 'np',
+    ).images
+    else:
+        images = pipe(
+            height = image_padded.shape[-2],
+            width = image_padded.shape[-1],
+            prompt='',
+            image=image_padded,
+            mask_image= inpainting_mask_padded,
+            generator = generator,
+            output_type = 'np',
+        ).images
+
+    img_inpainted_padded = torch.from_numpy(images)
+    img_inpainted_padded = torch.permute(img_inpainted_padded, [0, 3, 1, 2])
+    B, C, H_original , W_original = image.shape
+    img_inpainted = unpad_img_to_modulo(img_inpainted_padded, H_original, W_original)
     img_inpainted = img_inpainted * hole + image*context
     return img_inpainted
 
@@ -1544,6 +1661,8 @@ def DL_inpaint_edge(mesh,
                                 edge_dict['rgb'], edge_dict['disp'], edge_dict['edge'])
         x_anchor, y_anchor = [union_size['x_min'], union_size['x_max']], [union_size['y_min'], union_size['y_max']]
         tensor_edge_dict = convert2tensor(patch_edge_dict)
+        np.save("tensor_edge_dict.npy", patch_edge_dict)
+        #print("TENSOR EDGE DICT" + str(tensor_edge_dict))
         input_edge_feat = torch.cat((tensor_edge_dict['rgb'],
                                         tensor_edge_dict['disp'],
                                         tensor_edge_dict['edge'],
@@ -1629,6 +1748,7 @@ def DL_inpaint_edge(mesh,
     guidance_scale=7.5
     num_samples = 1
     generator = torch.Generator(device="cuda").manual_seed(0)
+    count = 0
     for edge_id, (context_cc, mask_cc, erode_context_cc, extend_context_cc, edge_cc) in enumerate(zip(context_ccs, mask_ccs, erode_context_ccs, extend_context_ccs, edge_ccs)):
         if len(specific_edge_id) > 0:
             if edge_id not in specific_edge_id:
@@ -1724,6 +1844,7 @@ def DL_inpaint_edge(mesh,
             if edge_dict['npath_map'].min() == 0 or edge_dict['fpath_map'].min() == 0:
                 import pdb; pdb.set_trace()
             edge_dict['output'] = (edge_dict['npath_map'] > -1) * edge_dict['mask'] + edge_dict['context'] * edge_dict['edge']
+            #print(edge_dict['output'])
         mesh, _, _, _ = create_placeholder(edge_dict['context'], edge_dict['mask'],
                                   edge_dict['depth'], edge_dict['fpath_map'],
                                   edge_dict['npath_map'], mesh, inpaint_iter,
@@ -1745,9 +1866,13 @@ def DL_inpaint_edge(mesh,
                                                             depth_dict['mask'].copy(),
                                                             depth_dict['output'] * depth_dict['context'],
                                                             config)
+        
         depth_dict['output'][depth_dict['mask'] > 0] = refine_depth_output[depth_dict['mask'] > 0]
+        #print(depth_dict['output'])
+        print("shape of depth: " + str(depth_dict['output'].shape))
         rgb_dict = get_rgb_from_nodes(context_cc | extend_context_cc,
                                       erode_context_cc | extend_erode_context_ccs[edge_id], mask_cc, mesh.graph['H'], mesh.graph['W'], mesh)
+        #print("context_shape" + str(rgb_dict["context"].shape))
         if np.all(rgb_dict['mask'] == edge_dict['mask']) is False:
             import pdb; pdb.set_trace()
         rgb_dict['edge'] = edge_dict['output']
@@ -1785,15 +1910,37 @@ def DL_inpaint_edge(mesh,
         rgb_input_feat[:, 3] = 1 - rgb_input_feat[:, 3]
         resize_mask = open_small_mask(resize_rgb_dict['mask'], resize_rgb_dict['context'], 3, 41)
         specified_hole = resize_mask
+        #print("hole_shape: " + str(specified_hole.shape))
+        #print("context_shape_r: " + str(resize_rgb_dict['context'].shape))
+        #print("rgb_shape: " + str(resize_rgb_dict['rgb'].shape))
+        #print("edge_shape_r: " + str(resize_rgb_dict['edge'].shape))
+        """
+        print(di6)
+        print(di6["context"].shape)
+        print(di6["mask"].shape)
+        print(di6["zero_mean_depth"].shape)
+        print(di6["output"].shape)
+        """
+        stride = 256
+        condition_image = depth_dict['condition_image']
+        print(condition_image.shape)
+        print(resize_rgb_dict['rgb'].shape)
+        if condition_image.shape[-1] != resize_rgb_dict['rgb'].shape[-1] or  condition_image.shape[-2] !=  resize_rgb_dict['rgb'].shape[-2]:
+            condition_image = torch.nn.functional.interpolate(condition_image, (resize_rgb_dict['rgb'].shape[-2], resize_rgb_dict['rgb'].shape[-1]),
+                                                                        mode='bilinear', align_corners=True)
+        print(condition_image.shape)
+        print(resize_rgb_dict['rgb'].shape)
         with torch.no_grad():
             if config['use_stable_diffusion']:
                 rgb_output = inpaint_Stable_Diffusion(specified_hole, 
                                                     resize_rgb_dict['context'],
                                                     resize_rgb_dict['rgb'],
+                                                    condition_image,
                                                     rgb_model, 
                                                     generator,
                                                     guidance_scale, 
-                                                    num_samples)
+                                                    num_samples,
+                                                    config)
             else:
                 rgb_output = rgb_model.forward_3P(specified_hole,
                                                 resize_rgb_dict['context'],
