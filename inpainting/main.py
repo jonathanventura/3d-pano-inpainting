@@ -23,7 +23,7 @@ from MiDaS.monodepth_net import MonoDepthNet
 import MiDaS.MiDaS_utils as MiDaS_utils
 from bilateral_filtering import sparse_bilateral_filtering
 from skimage import color
-from diffusers import StableDiffusionInpaintPipeline
+from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
@@ -102,11 +102,26 @@ for idx in tqdm(range(len(sample_list))):
         print(f"Loading rgb model at {time.time()}")
         if config['use_stable_diffusion']:
             device = "cuda"
-            model_path = "runwayml/stable-diffusion-inpainting"
-            rgb_model = StableDiffusionInpaintPipeline.from_pretrained(
-                    model_path,
-                    torch_dtype=torch.float16,
-                ).to(device)
+            if config["use_controlnet"]:
+                model_path = "runwayml/stable-diffusion-inpainting"
+                controlnet_path =  "fusing/stable-diffusion-v1-5-controlnet-depth"
+                controlnet = ControlNetModel.from_pretrained(
+                                                        controlnet_path, torch_dtype=torch.float16
+                                                    ).to(device)
+                rgb_model = StableDiffusionControlNetInpaintPipeline.from_pretrained(
+                                                                        model_path,
+                                                                        controlnet = controlnet,
+                                                                        torch_dtype=torch.float16,
+                                                                    ).to(device)
+            else:
+                if config["stable_diffusion_version"] == 2:
+                    model_path = "stabilityai/stable-diffusion-2-inpainting"
+                else:
+                     model_path = "runwayml/stable-diffusion-inpainting"
+                rgb_model = StableDiffusionInpaintPipeline.from_pretrained(
+                        model_path,
+                        torch_dtype=torch.float16,
+                    ).to(device)
         else:
             rgb_model = Inpaint_Color_Net()
             rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
