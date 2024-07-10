@@ -1485,7 +1485,7 @@ def inpaint_Stable_Diffusion_window(hole, context, image, condition_image, pipe,
     hole_clone = hole.detach().clone()
     condition_image_clone = condition_image.detach().clone()
 
-    generator = torch.Generator(device="cuda").manual_seed(0) # change the seed to get different results
+    generator = generator.manual_seed(0) if generator is not None else  torch.Generator(device="cuda").manual_seed(0) # Reset to seed 0 every single time!!!
     
     # For each window of 512x512
     for row in range(0, H, chip_size - stride):
@@ -1550,6 +1550,7 @@ def inpaint_Stable_Diffusion_window(hole, context, image, condition_image, pipe,
     return image_clone
 
 def inpaint_Stable_Diffusion(hole, context, image, condition_image, pipe, generator, guidance_scale, num_samples, config):
+    generator = generator.manual_seed(0) if generator is not None else  torch.Generator(device="cuda").manual_seed(0) ## Reset to seed 0 every single time!!
     image_padded = pad_img_to_modulo(image, 8, 0)
     hole_padded = pad_img_to_modulo(hole, 8, 0)
     context_padded =  pad_img_to_modulo(context, 8, 0)
@@ -1583,7 +1584,7 @@ def inpaint_Stable_Diffusion(hole, context, image, condition_image, pipe, genera
     img_inpainted_padded = torch.permute(img_inpainted_padded, [0, 3, 1, 2])
     B, C, H_original , W_original = image.shape
     img_inpainted = unpad_img_to_modulo(img_inpainted_padded, H_original, W_original)
-    img_inpainted = img_inpainted * hole + image*context
+    # img_inpainted = img_inpainted * hole + image*context
     return img_inpainted
 
 def DL_inpaint_edge(mesh,
@@ -1607,7 +1608,8 @@ def DL_inpaint_edge(mesh,
                     depth_feat_model=None,
                     specific_edge_id=-1,
                     specific_edge_loc=None,
-                    inpaint_iter=0):
+                    inpaint_iter=0,
+                    generator = None):
 
     if isinstance(config["gpu_ids"], int) and (config["gpu_ids"] >= 0):
         device = config["gpu_ids"]
@@ -1747,7 +1749,7 @@ def DL_inpaint_edge(mesh,
                         edges_in_mask[edge_id].add((end_mx, end_my))
     guidance_scale=7.5
     num_samples = 1
-    generator = torch.Generator(device="cuda").manual_seed(0)
+    # generator = torch.Generator(device="cuda").manual_seed(0)
     count = 0
     for edge_id, (context_cc, mask_cc, erode_context_cc, extend_context_cc, edge_cc) in enumerate(zip(context_ccs, mask_ccs, erode_context_ccs, extend_context_ccs, edge_ccs)):
         if len(specific_edge_id) > 0:
@@ -1884,10 +1886,13 @@ def DL_inpaint_edge(mesh,
         tensor_rgb_dict = convert2tensor(patch_rgb_dict)
         resize_rgb_dict = {k: v.clone() for k, v in tensor_rgb_dict.items()}
         max_hw = np.array([*patch_rgb_dict['mask'].shape[-2:]]).max()
-        init_frac = config['largest_size'] / (np.array([*patch_rgb_dict['mask'].shape[-2:]]).prod() ** 0.5)
-        resize_hw = [patch_rgb_dict['mask'].shape[-2] * init_frac, patch_rgb_dict['mask'].shape[-1] * init_frac]
-        resize_max_hw = max(resize_hw)
-        frac = (np.floor(resize_max_hw / 128.) * 128.) / max_hw
+        if config['resize_patch']: 
+            init_frac = config['largest_size'] / (np.array([*patch_rgb_dict['mask'].shape[-2:]]).prod() ** 0.5)
+            resize_hw = [patch_rgb_dict['mask'].shape[-2] * init_frac, patch_rgb_dict['mask'].shape[-1] * init_frac]
+            resize_max_hw = max(resize_hw)
+            frac = (np.floor(resize_max_hw / 128.) * 128.) / max_hw
+        else:
+            frac = 1 ## test inpainting w no resize
         if frac < 1:
             resize_mark = torch.nn.functional.interpolate(torch.cat((resize_rgb_dict['mask'],
                                                             resize_rgb_dict['context']),
@@ -2070,6 +2075,7 @@ def write_ply(image,
               depth_edge_model,
               depth_edge_model_init,
               depth_feat_model):
+    generator = torch.Generator(device="cuda")#.manual_seed(0)
     depth = depth.astype(np.float64)
     input_mesh, xy2depth, image, depth = create_mesh(depth, image, int_mtx, config)
     index = 0
@@ -2186,7 +2192,8 @@ def write_ply(image,
                                                                                                             depth_feat_model,
                                                                                                             specific_edge_id,
                                                                                                             specific_edge_loc,
-                                                                                                            inpaint_iter=0)
+                                                                                                            inpaint_iter=0,
+                                                                                                            generator = generator)
     
     specific_edge_id = []
     edge_canvas = np.zeros((input_mesh.graph['H'], input_mesh.graph['W']))
@@ -2224,7 +2231,8 @@ def write_ply(image,
                                                                                     depth_feat_model,
                                                                                     specific_edge_id,
                                                                                     specific_edge_loc,
-                                                                                    inpaint_iter=1)
+                                                                                    inpaint_iter=1,
+                                                                                    generator = generator)
 
     vertex_id = 0
     input_mesh.graph['H'], input_mesh.graph['W'] = input_mesh.graph['noext_H'], input_mesh.graph['noext_W']
