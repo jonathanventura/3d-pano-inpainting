@@ -93,15 +93,15 @@
 				const loader = new GLTFLoader();
 
 				/* get midas, v1, v2 file names for location from s3 bucket */
-				const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
-					'../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
-					'../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
-				]
-
-				// const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled.glb',
-				// 	'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled_v1.glb',
-				// 	'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + + '_panorama_2k_scaled_v2.glb'
+				// const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+				// 	'../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+				// 	'../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
 				// ]
+
+				const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled.glb',
+					'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v1.glb',
+					'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v2.glb'
+				]
 
 				files.forEach((file, index) => {
 					loader.load(file, function(glb) {
