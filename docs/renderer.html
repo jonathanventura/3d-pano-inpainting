@@ -1,324 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js vr - panorama with depth</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<link type="text/css" rel="stylesheet" href="main.css">
-        <style>
-            #progressBar {
-                width: 500px;
-                height: 24px;
-                position: absolute;
-                left: 50%;
-                top: 10px;
-                margin-left: -250px;
-            }
-			#buttons {
-				position: absolute;
-				top: 20px;
-				right: 0px;
-				padding: 10px 10px;
-				background-color: rgba(255, 255, 255, 0.3);
-				color: white;
-				border: none;
-				cursor: pointer;
-				font-size: 16px;
-				margin-left: 350px;
-			}
-			#outOfBoundsMessage {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background-color: rgba(148, 210, 244, 0.8);
-                color: white;
-                padding: 20px;
-                font-size: 24px;
-                display: none;
-				z-index: 11;
-            }
-			#resetButton {
-				position: absolute;
-				top: 100px;
-				left: 50%;
-				transform: translateX(-50%);
-				background-color: #008CBA;
-				color: white;
-				border: none;
-				padding: 10px 20px;
-				cursor: pointer;
-				font-size: 16px;
-				display: none;
-				z-index: 11;
-			}
-			#blackout {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				background-color: black;
-				display: none;
-				z-index: 10;
-			}
-        </style>
-        <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-		<script>
-			
-			
-		</script>
-
-        <script type="importmap">
-          {
-            "imports": {
-              "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-              "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
-            }
-          }
-        </script>
-	</head>
-	<body>
-		<div id="buttons">
-			<button id="midas">Midas</button>
-			<button id="dav1">Depth Anything V1</button>
-			<button id="dav2">Depth Anything V2</button>
-		</div>
-        <progress value="0" max="100" id="progressBar"></progress>
-		<div id="container"></div>
-		<div id="outOfBoundsMessage">Out of bounds</div>
-		<button id="resetButton">Reset</button>
-		<div id="blackout"></div>
-
-		<script type="module">
-
-            import * as THREE from 'three';
-			import { VRButton } from 'three/addons/webxr/VRButton.js';
-            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
-			import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-			import Stats from 'three/addons/libs/stats.module.js';
-
-			let camera, scene, renderer, sphere, clock, controls, keyPressCounts, outOfBounds, initialPosition;
-			let currentSceneIndex = 0; /* start on midas by default */
-			let scenes = []; /* array to store diff vers of same scene (midas, v1, v2) */
-
-            const stats = new Stats();
-            container.appendChild( stats.dom );
-
-			init();
-			animate();
-
-			function init() {
-
-				const container = document.getElementById( 'container' );
-
-				clock = new THREE.Clock();
-
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x101010 );
-
-				const light = new THREE.AmbientLight( 0xffffff, 1 );
-				scene.add( light );
-
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
-				camera.position.set( 0, 2, 0 );
-				scene.add( camera );
-
-				initialPosition = camera.position.clone();
-
-				const urlParams = new URLSearchParams(window.location.search);
-				const scene_name = urlParams.get('scene');
-
-				const loader = new GLTFLoader();
-
-				/* get midas, v1, v2 file names for location from s3 bucket */
-				// const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
-				// 	'../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
-				// 	'../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
-				// ]
-
-				const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled.glb',
-					'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v1.glb',
-					'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v2.glb'
-				]
-
-				files.forEach((file, index) => {
-					loader.load(file, function(glb) {
-						console.log(glb.scene);
-						let geometry;
-                        glb.scene.traverse(function(child) {
-                            if (child.isMesh) {
-                                geometry = child.geometry;
-                            }
-                        });
-                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        const mesh = new THREE.Mesh( geometry, material );
+  <head>
+    <title>three.js vr - panorama with depth</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link type="text/css" rel="stylesheet" href="main.css">
+    <style>
+      #progressBar {
+        width: 500px;
+        height: 24px;
+        position: absolute;
+        left: 50%;
+        top: 10px;
+        margin-left: -250px;
+      }
+      #buttons {
+        position: absolute;
+        top: 20px;
+        right: 0px;
+        padding: 10px 10px;
+        background-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        margin-left: 350px;
+      }
+      #outOfBoundsMessage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(148, 210, 244, 0.8);
+        color: white;
+        padding: 20px;
+        font-size: 24px;
+        display: none;
+        z-index: 11;
+      }
+      #resetButton {
+        position: absolute;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #008CBA;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 16px;
+        display: none;
+        z-index: 11;
+      }
+      #blackout {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: none;
+        z-index: 10;
+      }
+    </style>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script>
+    </script>
+    <script type="importmap">
+     {
+      "imports": {
+       "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+       "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
+      }
+     }
+    </script>
+  </head>
+  <body>
+    <div id="buttons">
+      <button id="midas">Midas</button>
+      <button id="dav1">Depth Anything V1</button>
+      <button id="dav2">Depth Anything V2</button>
+    </div>
+    <progress value="0" max="100" id="progressBar"></progress>
+    <div id="container"></div>
+    <div id="outOfBoundsMessage">Out of bounds</div>
+    <button id="resetButton">Reset</button>
+    <div id="blackout"></div>
+    <script type="module">
+      import * as THREE from 'three';
+      import { VRButton } from 'three/addons/webxr/VRButton.js';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+      import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import Stats from 'three/addons/libs/stats.module.js';
+      let camera, scene, renderer, sphere, clock, controls, keyPressCounts, outOfBounds, initialPosition;
+      let currentSceneIndex = 0; /* start on midas by default */
+      let scenes = []; /* array to store diff vers of same scene (midas, v1, v2) */
+      const stats = new Stats();
+      container.appendChild( stats.dom );
+      init();
+      animate();
+      function init() {
+        const container = document.getElementById( 'container' );
+        clock = new THREE.Clock();
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color( 0x101010 );
+        const light = new THREE.AmbientLight( 0xffffff, 1 );
+        scene.add( light );
+        camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
+        camera.position.set( 0, 2, 0 );
+        scene.add( camera );
+        initialPosition = camera.position.clone();
+        const urlParams = new URLSearchParams(window.location.search);
+        const scene_name = urlParams.get('scene');
+        const loader = new GLTFLoader();
+        /* get midas, v1, v2 file names for location from s3 bucket */
+        // const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+        // '../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
+        // '../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
+        // ]
+        const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled.glb',
+          'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v1.glb',
+          'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v2.glb'
+        ]
+        files.forEach((file, index) => {
+          loader.load(file, function(glb) {
+            console.log(glb.scene);
+            let geometry;
+            glb.scene.traverse(function(child) {
+              if (child.isMesh) {
+                geometry = child.geometry;
+              }
+            });
+            const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+            const mesh = new THREE.Mesh( geometry, material );
 ;
-						scenes[index] = mesh;
-						if (index === 0) {
-							scene.add(mesh); // Add the first scene by default
-						}
-					},
-
-					function ( xhr ) {
-						if ( xhr.lengthComputable ) {
-							var percentComplete = (xhr.loaded / xhr.total) * 100;
-							progressBar.value = percentComplete;
-							progressBar.style.display = 'block';
-						}
-
-						if (percentComplete === 100) {
-                            progressBar.style.display = 'none';
-                        }
-					},
-
-					function ( error ) {
-						console.log( 'An error happened' );
-						console.log( error );
-					});
-				});
-
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.xr.enabled = true;
-				renderer.xr.setReferenceSpaceType( 'local-floor' );
-				renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-				container.appendChild( renderer.domElement );
-
-				container.appendChild( VRButton.createButton( renderer ) );
-
-                controls = new OrbitControls( camera, renderer.domElement );
-                controls.target = new THREE.Vector3(0,2,0);
-                controls.autoRotate = true;
-				controls.listenToKeyEvents( window ); // optional
-                controls.keyPanSpeed = 100;
-				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-				controls.dampingFactor = 0.05;
-
-				controls.screenSpacePanning = false;
-
-				controls.minDistance = 1;
-				controls.maxDistance = 3;
-
-				keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
-                outOfBounds = false;
-
-				controls.addEventListener( 'end', onInteractionEnd );
-
-				window.addEventListener( 'resize', onWindowResize );	
-
-				window.addEventListener('keydown', onKeyPress);
-
-				document.getElementById('resetButton').addEventListener('click', onReset);
-    
-			}
-
-			function onInteractionEnd() {
-                controls.autoRotate = false;
+            scenes[index] = mesh;
+            if (index === 0) {
+              scene.add(mesh); // Add the first scene by default
             }
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			function onKeyPress(event) {
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                    keyPressCounts[event.key]++;
-                    if (keyPressCounts[event.key] > 5) {
-                        outOfBounds = true;
-                        document.getElementById('blackout').style.display = 'block';
-						document.getElementById('outOfBoundsMessage').style.display = 'block';
-						document.getElementById('resetButton').style.display = 'block';
-						
-                    }
-                }
+          },
+          function ( xhr ) {
+            if ( xhr.lengthComputable ) {
+              var percentComplete = (xhr.loaded / xhr.total) * 100;
+              progressBar.value = percentComplete;
+              progressBar.style.display = 'block';
             }
-
-			function onReset() {
-				keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
-				outOfBounds = false;
-				document.getElementById('blackout').style.display = 'none';
-				document.getElementById('outOfBoundsMessage').style.display = 'none';
-				document.getElementById('resetButton').style.display = 'none';
-				camera.position.copy(initialPosition);
-				controls.target.set(0, 2, 0);
-				controls.update();
-				animate();
-			}
-
-			function animate() {
-				if (!outOfBounds) {
-					renderer.setAnimationLoop( render );
-				}
-			}
-
-			function render() {
-				if ( renderer.xr.isPresenting === false ) {
-	                controls.update();
-				}
-
-				stats.update();
-
-				renderer.render( scene, camera );
-
-			}
-
-			document.getElementById('midas').addEventListener('click', function() {
-            	// alert('Midas clicked!');
-				//if (currentSceneIndex == 0) {
-					/*do nothing */
-				//} else {
-					//scene.remove(scenes[currentSceneIndex]);
-					//currentSceneIndex = 0;
-					//scene.add(scenes[currentSceneIndex]);
-				//}
-				if (currentSceneIndex !== 0) {
-					scene.remove(scenes[currentSceneIndex]);
-					currentSceneIndex = 0;
-					scene.add(scenes[currentSceneIndex]);
-				}
-        	});
-
-			document.getElementById('dav1').addEventListener('click', function() {
-            	// alert('Depth Anything V1 clicked!');
-				//if (currentSceneIndex == 1) {
-					/*do nothing */
-				//} else {
-					//scene.remove(scenes[currentSceneIndex]);
-					//currentSceneIndex = 1;
-					//scene.add(scenes[currentSceneIndex]);
-				//}
-				if (currentSceneIndex !== 1) {
-					scene.remove(scenes[currentSceneIndex]);
-					currentSceneIndex = 1;
-					scene.add(scenes[currentSceneIndex]);
-				}
-        	});
-
-			document.getElementById('dav2').addEventListener('click', function() {
-            	// alert('Depth Anything V2 clicked!');
-				//if (currentSceneIndex == 2) {
-					/*do nothing */
-				//} else {
-					//scene.remove(scenes[currentSceneIndex]);
-					//currentSceneIndex = 2;
-					//scene.add(scenes[currentSceneIndex]);
-				//}
-				if (currentSceneIndex !== 2) {
-					scene.remove(scenes[currentSceneIndex]);
-					currentSceneIndex = 2;
-					scene.add(scenes[currentSceneIndex]);
-				}
-        	});
-
-		</script>
-	</body>
+            if (percentComplete === 100) {
+              progressBar.style.display = 'none';
+            }
+          },
+          function ( error ) {
+            console.log( 'An error happened' );
+            console.log( error );
+          });
+        });
+        renderer = new THREE.WebGLRenderer();
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.xr.enabled = true;
+        renderer.xr.setReferenceSpaceType( 'local-floor' );
+        renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+        container.appendChild( renderer.domElement );
+        container.appendChild( VRButton.createButton( renderer ) );
+        controls = new OrbitControls( camera, renderer.domElement );
+        controls.target = new THREE.Vector3(0,2,0);
+        controls.autoRotate = true;
+        controls.listenToKeyEvents( window ); // optional
+        controls.keyPanSpeed = 100;
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 1;
+        controls.maxDistance = 3;
+        keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
+        outOfBounds = false;
+        controls.addEventListener( 'end', onInteractionEnd );
+        window.addEventListener( 'resize', onWindowResize );
+        window.addEventListener('keydown', onKeyPress);
+        document.getElementById('resetButton').addEventListener('click', onReset);
+      }
+      function onInteractionEnd() {
+        controls.autoRotate = false;
+      }
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+      }
+      function onKeyPress(event) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+          console.log(event.key);
+          keyPressCounts[event.key]++;
+          // if moving right, decrease left, etc.
+          if(event.key == 'ArrowUp') {
+            keyPressCounts['ArrowDown']--;
+          } else if (event.key == 'ArrowDown') {
+            keyPressCounts['ArrowUp']--;
+          } else if (event.key == 'ArrowLeft') {
+            keyPressCounts['ArrowRight']--;
+          } else if (event.key == 'ArrowRight') {
+            keyPressCounts['ArrowLeft']--;
+          }
+          if (keyPressCounts[event.key] > 5) {
+            outOfBounds = true;
+            document.getElementById('blackout').style.display = 'block';
+            document.getElementById('outOfBoundsMessage').style.display = 'block';
+            document.getElementById('resetButton').style.display = 'block';
+          }
+        }
+      }
+      function onReset() {
+        keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
+        outOfBounds = false;
+        document.getElementById('blackout').style.display = 'none';
+        document.getElementById('outOfBoundsMessage').style.display = 'none';
+        document.getElementById('resetButton').style.display = 'none';
+        camera.position.copy(initialPosition);
+        controls.target.set(0, 2, 0);
+        controls.update();
+        animate();
+      }
+      function animate() {
+        if (!outOfBounds) {
+          renderer.setAnimationLoop( render );
+        }
+      }
+      function render() {
+        if ( renderer.xr.isPresenting === false ) {
+          controls.update();
+        }
+        stats.update();
+        renderer.render( scene, camera );
+      }
+      document.getElementById('midas').addEventListener('click', function() {
+        // alert('Midas clicked!');
+        //if (currentSceneIndex == 0) {
+          /*do nothing */
+        //} else {
+          //scene.remove(scenes[currentSceneIndex]);
+          //currentSceneIndex = 0;
+          //scene.add(scenes[currentSceneIndex]);
+        //}
+        if (currentSceneIndex !== 0) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 0;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+      document.getElementById('dav1').addEventListener('click', function() {
+        // alert('Depth Anything V1 clicked!');
+        //if (currentSceneIndex == 1) {
+          /*do nothing */
+        //} else {
+          //scene.remove(scenes[currentSceneIndex]);
+          //currentSceneIndex = 1;
+          //scene.add(scenes[currentSceneIndex]);
+        //}
+        if (currentSceneIndex !== 1) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 1;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+      document.getElementById('dav2').addEventListener('click', function() {
+        // alert('Depth Anything V2 clicked!');
+        //if (currentSceneIndex == 2) {
+          /*do nothing */
+        //} else {
+          //scene.remove(scenes[currentSceneIndex]);
+          //currentSceneIndex = 2;
+          //scene.add(scenes[currentSceneIndex]);
+        //}
+        if (currentSceneIndex !== 2) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 2;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+    </script>
+  </body>
 </html>
