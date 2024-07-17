@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link type="text/css" rel="stylesheet" href="main.css">
     <style>
+      :root {
+        --black_opacity: 0; /* dependent on location */
+      }
       #progressBar {
         width: 500px;
         height: 24px;
@@ -61,6 +64,7 @@
         background-color: black;
         display: none;
         z-index: 10;
+        opacity: var(--black_opacity);
       }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -115,11 +119,14 @@
         const urlParams = new URLSearchParams(window.location.search);
         const scene_name = urlParams.get('scene');
         const loader = new GLTFLoader();
-        /* get midas, v1, v2 file names for location from s3 bucket */
+        
+        // local testing
         // const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
         // '../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
         // '../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
         // ]
+
+        /* get midas, v1, v2 file names for location from s3 bucket */
         const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled.glb',
           'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v1.glb',
           'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v2.glb'
@@ -138,7 +145,7 @@
 ;
             scenes[index] = mesh;
             if (index === 0) {
-              scene.add(mesh); // Add the first scene by default
+              scene.add(mesh); // Add the first scene (midas) by default
             }
           },
           function ( xhr ) {
@@ -191,26 +198,37 @@
       }
       function onKeyPress(event) {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-          console.log(event.key);
-          keyPressCounts[event.key]++;
-          // if moving right, decrease left, etc.
-          if(event.key == 'ArrowUp') {
-            keyPressCounts['ArrowDown']--;
-          } else if (event.key == 'ArrowDown') {
-            keyPressCounts['ArrowUp']--;
-          } else if (event.key == 'ArrowLeft') {
-            keyPressCounts['ArrowRight']--;
-          } else if (event.key == 'ArrowRight') {
-            keyPressCounts['ArrowLeft']--;
-          }
-          if (keyPressCounts[event.key] > 5) {
-            outOfBounds = true;
+          let x_diff, z_diff, distance, bounds;
+          // console.log(camera.position); // for debugging purposes
+          bounds = 2; // here bounds is manually set (should change to dynamic)
+          x_diff = camera.position.x - initialPosition.x;
+          z_diff = camera.position.z - initialPosition.z;
+          distance = Math.sqrt((x_diff * x_diff) + (z_diff * z_diff));
+          console.log(distance);
+
+          if (distance > bounds) {
+            // change opacity based on how much greater the current distance 
+            // from initial is compared to bounds
             document.getElementById('blackout').style.display = 'block';
-            document.getElementById('outOfBoundsMessage').style.display = 'block';
-            document.getElementById('resetButton').style.display = 'block';
+            setBlackoutOpacity(distance - bounds);
+            if ((distance - bounds) > 1) {
+              document.getElementById('resetButton').style.display = 'block';
+            } else {
+              document.getElementById('resetButton').style.display = 'none';
+            }
+          } else {
+            // so that when re-entering viable area, you can look/swipe around
+            document.getElementById('blackout').style.display = 'none';
           }
         }
       }
+
+      let r = document.querySelector(':root');
+
+      function setBlackoutOpacity(distance) {
+        r.style.setProperty('--black_opacity', distance);
+      }
+      
       function onReset() {
         keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
         outOfBounds = false;
@@ -235,14 +253,6 @@
         renderer.render( scene, camera );
       }
       document.getElementById('midas').addEventListener('click', function() {
-        // alert('Midas clicked!');
-        //if (currentSceneIndex == 0) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 0;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 0) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 0;
@@ -250,14 +260,6 @@
         }
       });
       document.getElementById('dav1').addEventListener('click', function() {
-        // alert('Depth Anything V1 clicked!');
-        //if (currentSceneIndex == 1) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 1;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 1) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 1;
@@ -265,14 +267,6 @@
         }
       });
       document.getElementById('dav2').addEventListener('click', function() {
-        // alert('Depth Anything V2 clicked!');
-        //if (currentSceneIndex == 2) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 2;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 2) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 2;
