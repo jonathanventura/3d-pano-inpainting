@@ -17,6 +17,10 @@
         top: 10px;
         margin-left: -250px;
       }
+      #boundary {
+        align-self: right;
+        margin-top: 10px;
+      }
       #buttons {
         position: absolute;
         top: 20px;
@@ -84,6 +88,11 @@
       <button id="midas">Midas</button>
       <button id="dav1">Depth Anything V1</button>
       <button id="dav2">Depth Anything V2</button>
+      <br>
+      <div id="boundary">
+        <input type="number" id="boundary-limit" placeholder="default set to 2">
+        <button id="change-boundary">Change Boundary</button>
+      </div>
     </div>
     <progress value="0" max="100" id="progressBar"></progress>
     <div id="container"></div>
@@ -187,6 +196,7 @@
         window.addEventListener( 'resize', onWindowResize );
         window.addEventListener('keydown', onKeyPress);
         document.getElementById('resetButton').addEventListener('click', onReset);
+        document.getElementById('change-boundary').addEventListener('click', changeBounds);
       }
       function onInteractionEnd() {
         controls.autoRotate = false;
@@ -196,11 +206,20 @@
         camera.updateProjectionMatrix();
         renderer.setSize( window.innerWidth, window.innerHeight );
       }
+
+      let bounds = 1;
+      function changeBounds() {
+        // dynamically change blackout boundary 
+        let inputField = document.getElementById("boundary-limit");
+
+        bounds = parseFloat(inputField.value);
+        console.log('boundary radius changed to ' + bounds);
+      }
+
       function onKeyPress(event) {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-          let x_diff, z_diff, distance, bounds;
+          let x_diff, z_diff, distance;
           // console.log(camera.position); // for debugging purposes
-          bounds = 2; // here bounds is manually set (should change to dynamic)
           x_diff = camera.position.x - initialPosition.x;
           z_diff = camera.position.z - initialPosition.z;
           distance = Math.sqrt((x_diff * x_diff) + (z_diff * z_diff));
