@@ -46,5 +46,7 @@ repeat_inpaint_edge: True
 crop_border: [0.03, 0.03, 0.05, 0.03]
 anti_flickering: True
 use_stable_diffusion: True
-stable_diffusion_version: 2
+stable_diffusion_version: 1.5
 use_controlnet: False
+resize_patch: False
+use_real_depth: False

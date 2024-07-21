@@ -1,1 +1,1 @@
-/monodepth/data/braunschweig_altstadt_panorama.png None
+/monodepth/data/basel_martinsgasse_panorama.png None

@@ -10,7 +10,7 @@ import yaml
 import time
 import sys
 from mesh import write_ply, read_ply, output_3d_photo
-from utils import get_MiDaS_samples, read_MiDaS_depth
+from utils import get_MiDaS_samples, read_MiDaS_depth, read_real_depth
 import torch
 import cv2
 from skimage.transform import resize
@@ -25,6 +25,7 @@ from bilateral_filtering import sparse_bilateral_filtering
 from skimage import color
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
 args = parser.parse_args()
@@ -36,6 +37,7 @@ os.makedirs(config['video_folder'], exist_ok=True)
 os.makedirs(config['depth_folder'], exist_ok=True)
 sample_list = get_MiDaS_samples(config['src_folder'], config['depth_folder'], config, config['specific'])
 normal_canvas, all_canvas = None, None
+print("sample list", sample_list)
 
 if isinstance(config["gpu_ids"], int) and (config["gpu_ids"] >= 0):
     device = config["gpu_ids"]
@@ -58,7 +60,7 @@ for idx in tqdm(range(len(sample_list))):
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
                   config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
     print(sample['depth_fi'])
-    print(np.load(sample['depth_fi']).shape)
+    print("Depth shape", np.load(sample['depth_fi']).shape)
 
     if 'npy' in config['depth_format']:
         config['output_h'], config['output_w'] = np.load(sample['depth_fi']).shape[:2]
@@ -73,9 +75,12 @@ for idx in tqdm(range(len(sample_list))):
         config['gray_image'] = True
     else:
         config['gray_image'] = False
-    print(config['output_w'],config['output_h'])
+    print("Width, height:", config['output_w'],config['output_h'])
     image = cv2.resize(image, (config['output_w'], config['output_h']), interpolation=cv2.INTER_AREA)
-    depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
+    if config["use_real_depth"] is False:
+        depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
+    else:
+        depth = read_real_depth(sample['depth_fi'])
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
     if not(config['load_ply'] is True and os.path.exists(mesh_fi)):
         vis_photos, vis_depths = sparse_bilateral_filtering(depth.copy(), image.copy(), config, num_iter=config['sparse_iter'], spdb=False)

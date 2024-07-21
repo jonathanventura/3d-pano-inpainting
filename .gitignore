@@ -165,8 +165,8 @@ results/*.npz
 results/*.npy
 results/*
 
-data/*
-docs/*
-
 ## VS Code
 .vscode/
+.DS_Store
+
+data/*

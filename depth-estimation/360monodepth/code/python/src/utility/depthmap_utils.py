@@ -33,7 +33,7 @@ def depth_ico_visual_save(depth_data_list_, output_path, subimage_idx_list=None)
     """save the visualized depth map array to image file with value-bar.
 
     :param dapthe_data: The depth data.
-    :type dapthe_data: numpy 
+    :type dapthe_data: numpy
     :param output_path: the absolute path of output image.
     :type output_path: str
     :param subimage_idx_list: available subimages index list.
@@ -94,7 +94,7 @@ def depth_visual_save(depth_data, output_path, overwrite=True):
     """save the visualized depth map to image file with value-bar.
 
     :param dapthe_data: The depth data.
-    :type dapthe_data: numpy 
+    :type dapthe_data: numpy
     :param output_path: the absolute path of output image.
     :type output_path: str
     """
@@ -171,6 +171,116 @@ def run_persp_monodepth(rgb_image_data_list, persp_monodepth, use_large_model=Tr
         return MiDaS_torch_hub_data(rgb_image_data_list, persp_monodepth, use_large_model=use_large_model)
     if persp_monodepth == "boost":
         return boosting_monodepth(rgb_image_data_list)
+    if persp_monodepth == "depthanything":
+        return DepthAnything(rgb_image_data_list)
+    if persp_monodepth == "depthanythingv2":
+        return DepthAnythingV2(rgb_image_data_list)
+
+
+def DepthAnythingV2(rgb_image_data_list):
+    import os
+    import cv2
+    from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+    import torch
+    import numpy as np
+
+    print("using depth anything v2")
+
+    disparity_map_list = []
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    # use hugging face library transformers to import large ver
+    image_processor = AutoImageProcessor.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
+    model = AutoModelForDepthEstimation.from_pretrained("pcuenq/Depth-Anything-V2-Large-hf")
+    model = model.to(device)
+    model.eval()
+
+    for index, image in enumerate(rgb_image_data_list):
+        # prepare image for the model
+        inputs = image_processor(images=image, return_tensors="pt")
+        inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            predicted_depth = outputs.predicted_depth
+
+        # interpolate to original size
+        prediction = torch.nn.functional.interpolate(
+            predicted_depth.unsqueeze(1),
+            size=image.shape[:2], # is the index correct?
+            mode="bicubic",
+            align_corners=False,
+        ).squeeze().cpu().numpy()
+
+        disparity_map_list.append(prediction)
+
+        del prediction
+        torch.cuda.empty_cache()
+
+        if index % 10 == 0:
+            print(f"DepthAnythingV2 estimated {index} rgb image's disparity map.")
+
+    return disparity_map_list
+
+
+def DepthAnything(rgb_image_data_list):
+    import os
+    # print(os.getcwd())
+    # os.environ['TRANSFORMERS_CACHE'] = '/data/bshowell/.cache/huggingface/hub'
+    from transformers import AutoImageProcessor, AutoModelForDepthEstimation
+    import torch
+    import numpy as np
+
+    disparity_map_list = []
+
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    image_processor = AutoImageProcessor.from_pretrained("LiheYoung/depth-anything-large-hf")
+    model = AutoModelForDepthEstimation.from_pretrained("LiheYoung/depth-anything-large-hf")
+    model = model.to(device)
+    model.eval()
+
+    for index, image in enumerate(rgb_image_data_list):
+
+        # prepare image for the model
+        inputs = image_processor(images=image, return_tensors="pt")
+        inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            predicted_depth = outputs.predicted_depth
+
+        # interpolate to original size
+        prediction = torch.nn.functional.interpolate(
+            predicted_depth.unsqueeze(1),
+            size=image.shape[:2],
+            mode="bicubic",
+            align_corners=False,
+        ).squeeze()
+
+        # visualize the prediction
+        output = prediction.cpu().numpy()
+        disparity_map_list.append(output)
+
+        # # Debugging: Outputs each individual subimage and its calculated depthmap
+        # formatted = (output * 255 / np.max(output)).astype("uint8")
+        # depth = Image.fromarray(output)
+        # depth.save(f"/monodepth/results/temp/{index}_depth.png")
+
+        # formatted = (image / np.max(output)).astype("uint8")
+        # img = Image.fromarray(image)
+        # img.save(f"/monodepth/results/temp/{index}_image.png")
+
+
+        del output
+        del prediction
+        torch.cuda.empty_cache()
+
+        if index % 10 == 0:
+            print(f"DepthAnything estimated {index} rgb image's disparity map.")
+
+    return disparity_map_list
 
 
 def MiDaS_torch_hub_data(rgb_image_data_list, persp_monodepth, use_large_model=True):
@@ -586,7 +696,7 @@ def read_exr(exp_file_path):
     :param exp_file_path: file path
     :type exp_file_path: str
     :return: depth map data
-    :rtype: numpy 
+    :rtype: numpy
     """
     import array
     import OpenEXR
@@ -724,7 +834,7 @@ def depth2disparity(depth_map, baseline=1.0, focal=1.0):
     :type baseline: float, optional
     :param focal: [description], defaults to 1
     :type focal: float, optional
-    :return: disparity map data, 
+    :return: disparity map data,
     :rtype: numpy
     """
     no_zeros_index = np.where(depth_map != 0)
@@ -798,7 +908,7 @@ def subdepthmap_tang2erp(subimage_depthmap_persp, gnomonic_coord_xy):
     """ Convert the depth map from perspective to ERP space.
 
     :param subimage_erp_depthmap: subimage's depth map of ERP space.
-    :type subimage_erp_depthmap: numpy 
+    :type subimage_erp_depthmap: numpy
     :param gnomonic_coord_xy: The tangent image's pixels gnomonic coordinate, x and y.
     :type gnomonic_coord_xy: list
     """
@@ -820,7 +930,7 @@ def depthmap_pyramid(depthmap_list, pyramid_layer_number, pyramid_downscale):
     :type pyramid_downscale: float
     :return: the pyramid for each depth map. the 1st index is pyramid level, 2nd is image index, [pyramid_idx][image_idx], 1st (index 0) level is coarsest image.
     :rtype: list
-    """    
+    """
     depthmap_number = len(depthmap_list)
     depthmap_pryamid = [[0] * depthmap_number for i in range(pyramid_layer_number)]
     for index in range(0, depthmap_number):
