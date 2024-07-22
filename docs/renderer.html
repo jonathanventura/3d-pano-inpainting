@@ -225,27 +225,30 @@
       }
 
       function onKeyPress(event) {
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-          console.log(event.key);
-          keyPressCounts[event.key]++;
-          // if moving right, decrease left, etc.
-          if(event.key == 'ArrowUp') {
-            keyPressCounts['ArrowDown']--;
-          } else if (event.key == 'ArrowDown') {
-            keyPressCounts['ArrowUp']--;
-          } else if (event.key == 'ArrowLeft') {
-            keyPressCounts['ArrowRight']--;
-          } else if (event.key == 'ArrowRight') {
-            keyPressCounts['ArrowLeft']--;
+        if (['h'].includes(event.key)) {
+          // Toggle visibility of the FPS display along with the buttons
+          let statsDisplay = document.querySelector('.stats');
+          if (statsDisplay.style.display === 'none') {
+            statsDisplay.style.display = 'block'; // Show the stats
+          } else {
+            statsDisplay.style.display = 'none'; // Hide the stats
           }
-          if (keyPressCounts[event.key] > 5) {
-            outOfBounds = true;
-            document.getElementById('blackout').style.display = 'block';
-            document.getElementById('outOfBoundsMessage').style.display = 'block';
-            document.getElementById('resetButton').style.display = 'block';
+    
+          // Hide/unhide buttons using 'h' key
+          if (document.getElementById('buttons').style.display == 'none') {
+            document.getElementById('buttons').style.display = 'block';
+          } else {
+            document.getElementById('buttons').style.display = 'none';
           }
         }
       }
+
+      let r = document.querySelector(':root');
+
+      function setBlackoutOpacity(distance) {
+        r.style.setProperty('--black_opacity', distance);
+      }
+      
       function onReset() {
         outOfBounds = false;
         document.getElementById('blackout').style.display = 'none';
