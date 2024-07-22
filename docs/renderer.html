@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link type="text/css" rel="stylesheet" href="main.css">
     <style>
+      :root {
+        --black_opacity: 0; /* dependent on location */
+      }
       #progressBar {
         width: 500px;
         height: 24px;
@@ -13,6 +16,10 @@
         left: 50%;
         top: 10px;
         margin-left: -250px;
+      }
+      #boundary {
+        align-self: right;
+        margin-top: 10px;
       }
       #buttons {
         position: absolute;
@@ -25,6 +32,7 @@
         cursor: pointer;
         font-size: 16px;
         margin-left: 350px;
+        display: block;
       }
       #outOfBoundsMessage {
         position: absolute;
@@ -61,6 +69,7 @@
         background-color: black;
         display: none;
         z-index: 10;
+        opacity: var(--black_opacity);
       }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
@@ -80,6 +89,14 @@
       <button id="midas">Midas</button>
       <button id="dav1">Depth Anything V1</button>
       <button id="dav2">Depth Anything V2</button>
+      <button id="midas-sd">Midas SD</button>
+      <button id="dav1-sd">Depth Anything V1 SD</button>
+      <button id="dav2-sd">Depth Anything V2 SD</button>
+      <br>
+      <div id="boundary">
+        <input type="number" id="boundary-limit" placeholder="default set to 1">
+        <button id="change-boundary">Change Boundary</button>
+      </div>
     </div>
     <progress value="0" max="100" id="progressBar"></progress>
     <div id="container"></div>
@@ -98,6 +115,7 @@
       let currentSceneIndex = 0; /* start on midas by default */
       let scenes = []; /* array to store diff vers of same scene (midas, v1, v2) */
       const stats = new Stats();
+      stats.dom.classList.add('stats');//to help hide the fps
       container.appendChild( stats.dom );
       init();
       animate();
@@ -115,14 +133,20 @@
         const urlParams = new URLSearchParams(window.location.search);
         const scene_name = urlParams.get('scene');
         const loader = new GLTFLoader();
-        /* get midas, v1, v2 file names for location from s3 bucket */
+        
+        // local testing
         // const files = ['../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
         // '../results/ampleben_dorfkirche_panorama_rescaled_v1.glb',
         // '../results/ampleben_dorfkirche_panorama_rescaled_v2.glb'
         // ]
-        const files = ['https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled.glb',
-          'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v1.glb',
-          'https://vrmeshes.s3.us-west-1.amazonaws.com/' + scene_name + '_panorama_2k_scaled_v2.glb'
+
+        /* get midas, v1, v2 (as well as w stable diff) file names for location from s3 bucket  */
+        const files = ['https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_midas.glb',
+          'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_DA1.glb',
+          'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_DA2.glb',
+          'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_midas_sd.glb',
+          'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_DA_sd.glb',
+          'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name + '_DA2_sd.glb'
         ]
         files.forEach((file, index) => {
           loader.load(file, function(glb) {
@@ -138,7 +162,7 @@
 ;
             scenes[index] = mesh;
             if (index === 0) {
-              scene.add(mesh); // Add the first scene by default
+              scene.add(mesh); // Add the first scene (midas) by default
             }
           },
           function ( xhr ) {
@@ -180,6 +204,7 @@
         window.addEventListener( 'resize', onWindowResize );
         window.addEventListener('keydown', onKeyPress);
         document.getElementById('resetButton').addEventListener('click', onReset);
+        document.getElementById('change-boundary').addEventListener('click', changeBounds);
       }
       function onInteractionEnd() {
         controls.autoRotate = false;
@@ -189,30 +214,42 @@
         camera.updateProjectionMatrix();
         renderer.setSize( window.innerWidth, window.innerHeight );
       }
+
+      let bounds = 1;
+      function changeBounds() {
+        // dynamically change blackout boundary 
+        let inputField = document.getElementById("boundary-limit");
+
+        bounds = parseFloat(inputField.value);
+        console.log('boundary radius changed to ' + bounds);
+      }
+
       function onKeyPress(event) {
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-          console.log(event.key);
-          keyPressCounts[event.key]++;
-          // if moving right, decrease left, etc.
-          if(event.key == 'ArrowUp') {
-            keyPressCounts['ArrowDown']--;
-          } else if (event.key == 'ArrowDown') {
-            keyPressCounts['ArrowUp']--;
-          } else if (event.key == 'ArrowLeft') {
-            keyPressCounts['ArrowRight']--;
-          } else if (event.key == 'ArrowRight') {
-            keyPressCounts['ArrowLeft']--;
+        if (['h'].includes(event.key)) {
+          // Toggle visibility of the FPS display along with the buttons
+          let statsDisplay = document.querySelector('.stats');
+          if (statsDisplay.style.display === 'none') {
+            statsDisplay.style.display = 'block'; // Show the stats
+          } else {
+            statsDisplay.style.display = 'none'; // Hide the stats
           }
-          if (keyPressCounts[event.key] > 5) {
-            outOfBounds = true;
-            document.getElementById('blackout').style.display = 'block';
-            document.getElementById('outOfBoundsMessage').style.display = 'block';
-            document.getElementById('resetButton').style.display = 'block';
+    
+          // Hide/unhide buttons using 'h' key
+          if (document.getElementById('buttons').style.display == 'none') {
+            document.getElementById('buttons').style.display = 'block';
+          } else {
+            document.getElementById('buttons').style.display = 'none';
           }
         }
       }
+
+      let r = document.querySelector(':root');
+
+      function setBlackoutOpacity(distance) {
+        r.style.setProperty('--black_opacity', distance);
+      }
+      
       function onReset() {
-        keyPressCounts = { ArrowUp: 0, ArrowDown: 0, ArrowLeft: 0, ArrowRight: 0 };
         outOfBounds = false;
         document.getElementById('blackout').style.display = 'none';
         document.getElementById('outOfBoundsMessage').style.display = 'none';
@@ -233,16 +270,29 @@
         }
         stats.update();
         renderer.render( scene, camera );
+        let x_diff, z_diff, distance;
+        // console.log(camera.position); // for debugging purposes
+        x_diff = camera.position.x - initialPosition.x;
+        z_diff = camera.position.z - initialPosition.z;
+        distance = Math.sqrt((x_diff * x_diff) + (z_diff * z_diff));
+        // console.log(distance);
+
+        if (distance > bounds) {
+          // change opacity based on how much greater the current distance 
+          // from initial is compared to bounds
+          document.getElementById('blackout').style.display = 'block';
+          setBlackoutOpacity(distance - bounds);
+          if ((distance - bounds) > 1) {
+            document.getElementById('resetButton').style.display = 'block';
+          } else {
+            document.getElementById('resetButton').style.display = 'none';
+          }
+        } else {
+          // so that when re-entering viable area, you can look/swipe around
+          document.getElementById('blackout').style.display = 'none';
+        }
       }
       document.getElementById('midas').addEventListener('click', function() {
-        // alert('Midas clicked!');
-        //if (currentSceneIndex == 0) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 0;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 0) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 0;
@@ -250,14 +300,6 @@
         }
       });
       document.getElementById('dav1').addEventListener('click', function() {
-        // alert('Depth Anything V1 clicked!');
-        //if (currentSceneIndex == 1) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 1;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 1) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 1;
@@ -265,17 +307,30 @@
         }
       });
       document.getElementById('dav2').addEventListener('click', function() {
-        // alert('Depth Anything V2 clicked!');
-        //if (currentSceneIndex == 2) {
-          /*do nothing */
-        //} else {
-          //scene.remove(scenes[currentSceneIndex]);
-          //currentSceneIndex = 2;
-          //scene.add(scenes[currentSceneIndex]);
-        //}
         if (currentSceneIndex !== 2) {
           scene.remove(scenes[currentSceneIndex]);
           currentSceneIndex = 2;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+        document.getElementById('midas-sd').addEventListener('click', function() {
+        if (currentSceneIndex !== 3) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 3;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+      document.getElementById('dav1-sd').addEventListener('click', function() {
+        if (currentSceneIndex !== 4) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 4;
+          scene.add(scenes[currentSceneIndex]);
+        }
+      });
+      document.getElementById('dav2-sd').addEventListener('click', function() {
+        if (currentSceneIndex !== 5) {
+          scene.remove(scenes[currentSceneIndex]);
+          currentSceneIndex = 5;
           scene.add(scenes[currentSceneIndex]);
         }
       });
