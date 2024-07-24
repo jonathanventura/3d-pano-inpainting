@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js vr - panorama with depth</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<link type="text/css" rel="stylesheet" href="main.css">
+    <head>
+        <title>three.js vr - panorama with depth</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <link type="text/css" rel="stylesheet" href="main.css">
         <style>
             #progressBar {
                 width: 500px;
@@ -16,11 +16,10 @@
             }
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-		<script>
-			
-			
-		</script>
-
+        <script>
+            
+            
+        </script>
         <script type="importmap">
           {
             "imports": {
@@ -29,66 +28,70 @@
             }
           }
         </script>
-	</head>
-	<body>
+    </head>
+    <body>
         <progress value="0" max="100" id="progressBar"></progress>
-		<div id="container"></div>
-
-		<script type="module">
-
+        <div id="container"></div>
+        <script type="module">
             import * as THREE from 'three';
-			import { VRButton } from 'three/addons/webxr/VRButton.js';
+            import { VRButton } from 'three/addons/webxr/VRButton.js';
             import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-			import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
-			import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+            import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+            import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
             import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-			import Stats from 'three/addons/libs/stats.module.js';
-
-			let camera, scene, renderer, sphere, clock, controls;
-
+            import Stats from 'three/addons/libs/stats.module.js';
+            let camera, scene, renderer, sphere, clock, controls;
             const stats = new Stats();
             container.appendChild( stats.dom );
-
-			init();
-			animate();
-
-			function init() {
-
-				const container = document.getElementById( 'container' );
-
-				clock = new THREE.Clock();
-
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x101010 );
-
-				const light = new THREE.AmbientLight( 0xffffff, 1 );
-				scene.add( light );
-
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
-				camera.position.set( 0, 2, 0 );
-				scene.add( camera );
-
-				const urlParams = new URLSearchParams(window.location.search);
-				const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
-
-				const loader = new GLTFLoader();
-                loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/'+ scene_name,
+            init();
+            animate();
+            function init() {
+                const container = document.getElementById( 'container' );
+                clock = new THREE.Clock();
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color( 0x101010 );
+                const light = new THREE.AmbientLight( 0xffffff, 1 );
+                scene.add( light );
+                camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
+                camera.position.set( 0, 2, 0 );
+                scene.add( camera );
+                const urlParams = new URLSearchParams(window.location.search);
+                const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
+                const loader = new GLTFLoader();
+                loader.load( '../results/braunschweig_altstadt_panorama_uv.glb',
                     function ( glb ) {
                         console.log(glb.scene);
                         var geometry;
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
-                                geometry = child.geometry;
+                                // geometry = child.geometry;
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                // Log the material properties to inspect them
+                                console.log(child.material);
+                                // If the child has multiple materials (e.g., an array of materials)
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach((material, index) => {
+                                        console.log(`Material ${index}:`, material);
+                                        if (material.map) {
+                                            console.log(`Texture for Material ${index}:`, material.map);
+                                        }
+                                        material.emissive = new THREE.Color(0x404040);
+                                    });
+                                } else {
+                                    if (child.material.map) {
+                                        console.log('Texture:', child.material.map);
+                                    }
+                                }
                             }
                         });
-                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        const mesh = new THREE.Mesh( geometry, material );
-
+                        // const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+                        // const mesh = new THREE.Mesh( geometry, material );
+                        let mesh = glb.scene;
                         scene.add(mesh);
                         progressBar.style.display = 'none'
                     },
                 
-
                     function ( xhr ) {
                         if ( xhr.lengthComputable ) {
                             var percentComplete = (xhr.loaded / xhr.total) * 100;
@@ -101,66 +104,45 @@
                         console.log( error );
                     }
                 );
-
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.xr.enabled = true;
-				renderer.xr.setReferenceSpaceType( 'local-floor' );
-				renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-				container.appendChild( renderer.domElement );
-
-				container.appendChild( VRButton.createButton( renderer ) );
-
+                renderer = new THREE.WebGLRenderer();
+                renderer.setPixelRatio( window.devicePixelRatio );
+                renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.xr.enabled = true;
+                renderer.xr.setReferenceSpaceType( 'local-floor' );
+                renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+                container.appendChild( renderer.domElement );
+                container.appendChild( VRButton.createButton( renderer ) );
                 controls = new OrbitControls( camera, renderer.domElement );
                 controls.target = new THREE.Vector3(0,2,0);
                 controls.autoRotate = true;
-				controls.listenToKeyEvents( window ); // optional
+                controls.listenToKeyEvents( window ); // optional
                 controls.keyPanSpeed = 100;
-				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-				controls.dampingFactor = 0.05;
-
-				controls.screenSpacePanning = false;
-
-				controls.minDistance = 1;
-				controls.maxDistance = 3;
-
+                controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+                controls.dampingFactor = 0.05;
+                controls.screenSpacePanning = false;
+                controls.minDistance = 1;
+                controls.maxDistance = 3;
                 controls.addEventListener( 'end', onInteractionEnd );
-
-				window.addEventListener( 'resize', onWindowResize );
-
-			}
-
+                window.addEventListener( 'resize', onWindowResize );
+            }
             function onInteractionEnd() {
                 controls.autoRotate = false;
             }
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			function animate() {
-
-				renderer.setAnimationLoop( render );
-
-			}
-
-			function render() {
-				if ( renderer.xr.isPresenting === false ) {
-	                controls.update();
-				}
-
-				stats.update();
-
-				renderer.render( scene, camera );
-
-			}
-
-		</script>
-	</body>
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+            }
+            function animate() {
+                renderer.setAnimationLoop( render );
+            }
+            function render() {
+                if ( renderer.xr.isPresenting === false ) {
+                    controls.update();
+                }
+                stats.update();
+                renderer.render( scene, camera );
+            }
+        </script>
+    </body>
 </html>
