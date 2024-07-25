@@ -52,24 +52,17 @@
                 scene.background = new THREE.Color( 0x101010 );
 
                 //lights
-                const light = new THREE.AmbientLight( 0xffffff, 1 ); // Existing ambient light
+                const light = new THREE.AmbientLight( 0x404040, 7 ); // Existing ambient light
                 scene.add( light );
 
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // Additional directional light
-                directionalLight.position.set(0, 10, 0); // Positioned above the scene
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 6); // Additional directional light
+                directionalLight.position.set(0, 1, 0); // Positioned above the scene
                 scene.add(directionalLight);
 
                 //camera setup
                 camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
-                camera.position.set( 0, 2, 0 );
+                camera.position.set( 0, 0, 0 );
                 scene.add( camera );
-
-                // Test Sphere to make sure something is actually rendering
-                const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
-                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });// Red color for visibility
-                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                sphere.position.set(0, 1, -5); // Positioned in front of the camera
-                scene.add(sphere);
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
@@ -85,25 +78,18 @@
                                 child.receiveShadow = true;
                                 // Log the material properties to inspect them
                                 console.log(child.material);
-                                // If the child has multiple materials (e.g., an array of materials)
-                                if (Array.isArray(child.material)) {
-                                    child.material.forEach((material, index) => {
-                                        console.log(`Material ${index}:`, material);
-                                        if (material.map) {
-                                            console.log(`Texture for Material ${index}:`, material.map);
-                                        }
-                                        material.emissive = new THREE.Color(0x404040);
-                                    });
-                                } else {
-                                    if (child.material.map) {
-                                        console.log('Texture:', child.material.map);
-                                    }
+                                
+                                if (child.material.map) {
+                                    console.log('Texture:', child.material.map);
                                 }
+
                             }
                         });
                         // const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
                         // const mesh = new THREE.Mesh( geometry, material );
                         let mesh = glb.scene;
+                        mesh.position.set(0,1,0);
+                        mesh.scale.set(7,7,7);
                         scene.add(mesh);
                         progressBar.style.display = 'none'
                     },
