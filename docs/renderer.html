@@ -50,11 +50,27 @@
                 clock = new THREE.Clock();
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color( 0x101010 );
-                const light = new THREE.AmbientLight( 0xffffff, 1 );
+
+                //lights
+                const light = new THREE.AmbientLight( 0xffffff, 1 ); // Existing ambient light
                 scene.add( light );
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // Additional directional light
+                directionalLight.position.set(0, 10, 0); // Positioned above the scene
+                scene.add(directionalLight);
+
+                //camera setup
                 camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
                 camera.position.set( 0, 2, 0 );
                 scene.add( camera );
+
+                // Test Sphere to make sure something is actually rendering
+                const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+                const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });// Red color for visibility
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.set(0, 1, -5); // Positioned in front of the camera
+                scene.add(sphere);
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
                 const loader = new GLTFLoader();
@@ -112,6 +128,8 @@
                 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
                 container.appendChild( renderer.domElement );
                 container.appendChild( VRButton.createButton( renderer ) );
+
+                //controls
                 controls = new OrbitControls( camera, renderer.domElement );
                 controls.target = new THREE.Vector3(0,2,0);
                 controls.autoRotate = true;
