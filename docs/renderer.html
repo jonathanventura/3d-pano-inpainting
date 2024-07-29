@@ -55,10 +55,6 @@
                 const light = new THREE.AmbientLight( 0x404040, 7 ); // Existing ambient light
                 scene.add( light );
 
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 6); // Additional directional light
-                directionalLight.position.set(0, 1, 0); // Positioned above the scene
-                scene.add(directionalLight);
-
                 //camera setup
                 camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
                 camera.position.set( 0, 0, 0 );
@@ -73,22 +69,30 @@
                         var geometry;
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
-                                // geometry = child.geometry;
                                 child.castShadow = true;
                                 child.receiveShadow = true;
-                                // Log the material properties to inspect them
-                                console.log(child.material);
                                 
+                                console.log("Old mat:", child.material);
+                                
+                                let new_mat;
+
                                 if (child.material.map) {
                                     console.log('Texture:', child.material.map);
+                            
+                                    new_mat = new THREE.MeshBasicMaterial({
+                                        map: child.material.map || null
+                                    });
                                 }
+
+                                child.material = new_mat;
+
+                                console.log("New mat:", child.material);
 
                             }
                         });
-                        // const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        // const mesh = new THREE.Mesh( geometry, material );
+
                         let mesh = glb.scene;
-                        mesh.position.set(0,1,0);
+                        mesh.position.set(0,2,0);
                         mesh.scale.set(7,7,7);
                         scene.add(mesh);
                         progressBar.style.display = 'none'
@@ -109,9 +113,12 @@
                 renderer = new THREE.WebGLRenderer();
                 renderer.setPixelRatio( window.devicePixelRatio );
                 renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.setFaceCulling = THREE.CullFaceNone;
                 renderer.xr.enabled = true;
                 renderer.xr.setReferenceSpaceType( 'local-floor' );
                 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+                renderer.setFaceCulling = THREE.CullFaceNone;
+                console.log(renderer);
                 container.appendChild( renderer.domElement );
                 container.appendChild( VRButton.createButton( renderer ) );
 
