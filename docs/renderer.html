@@ -116,7 +116,7 @@
                 renderer.setFaceCulling = THREE.CullFaceNone;
                 renderer.xr.enabled = true;
                 renderer.xr.setReferenceSpaceType( 'local-floor' );
-                renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+                renderer.outputColorSpace = THREE.SRGBColorSpace;
                 renderer.setFaceCulling = THREE.CullFaceNone;
                 console.log(renderer);
                 container.appendChild( renderer.domElement );
