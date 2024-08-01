@@ -111,6 +111,7 @@
       import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
       import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       import Stats from 'three/addons/libs/stats.module.js';
+
       let camera, scene, renderer, sphere, clock, controls, keyPressCounts, outOfBounds, initialPosition;
       let currentSceneIndex = 0; /* start on midas by default */
       let scenes = []; /* array to store diff vers of same scene (midas, v1, v2) */
@@ -119,6 +120,7 @@
       container.appendChild( stats.dom );
       init();
       animate();
+
       function init() {
         const container = document.getElementById( 'container' );
         clock = new THREE.Clock();
@@ -205,7 +207,40 @@
         window.addEventListener('keydown', onKeyPress);
         document.getElementById('resetButton').addEventListener('click', onReset);
         document.getElementById('change-boundary').addEventListener('click', changeBounds);
+
+        // Adding XR input handling
+        renderer.xr.addEventListener('sessionstart', onXRSessionStart);
       }
+      
+      //VR stuff
+      function onXRSessionStart(event) {
+        const session = renderer.xr.getSession();
+        session.addEventListener('inputsourceschange', onInputSourcesChange);
+        session.addEventListener('selectstart', onSelectStart);
+      }
+
+      function onInputSourcesChange(event) {
+        // Handle input sources change if needed
+      }
+
+      function onSelectStart(event) {
+        const inputSource = event.inputSource;
+        if (inputSource && inputSource.gamepad) {
+          const gamepad = inputSource.gamepad;
+          // Assuming button 0 (A button on Oculus Quest 2) is used to cycle scenes
+          if (gamepad.buttons[0].pressed) {
+            cycleScenes();
+          }
+        }
+      }
+
+      function cycleScenes() {
+        scene.remove(scenes[currentSceneIndex]);
+        currentSceneIndex = (currentSceneIndex + 1) % scenes.length;
+        scene.add(scenes[currentSceneIndex]);
+      }
+
+
       function onInteractionEnd() {
         controls.autoRotate = false;
       }
