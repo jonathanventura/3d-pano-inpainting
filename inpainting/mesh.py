@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 try:
     import cynetworkx as netx
@@ -26,6 +27,7 @@ import random
 from functools import reduce
 import math
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
+import math
 
 
 def create_mesh(depth, image, int_mtx, config):
@@ -107,6 +109,21 @@ def tear_edges(mesh, threshold = 0.00025, xy2depth=None):
             remove_edge_list.append((prjto3d(x, y), prjto3d(x+1, y)))
     mesh.remove_edges_from(remove_edge_list)
 
+    return mesh
+
+def remove_long_edge(mesh):
+    remove_edge_list = []
+    mesh_nodes = mesh.nodes
+    edge_dict = {}
+    
+    for edge in mesh.edges:
+        edge_length = math.sqrt((abs(edge[0][0] - edge[1][0]) ** 2) + (abs(edge[0][1] - edge[1][1]) ** 2) + (abs(edge[0][2] - edge[1][2]) ** 2))
+        if edge_length > 1.15 and edge_length < 2047 and abs(edge[1][2]) < 5.5 and abs(edge[0][2]) < 5.5:
+            print(edge_length)
+            print(edge[0], edge[1])
+            remove_edge_list.append((edge[0], edge[1]))
+    mesh.remove_edges_from(remove_edge_list)
+    
     return mesh
 
 def calculate_fov(mesh):
@@ -2081,7 +2098,11 @@ def write_ply(image,
     index = 0
 
     H, W = input_mesh.graph['H'], input_mesh.graph['W']
+    input_mesh = remove_long_edge(input_mesh)
     input_mesh = tear_edges(input_mesh, config['depth_threshold'], xy2depth)
+    cliques = list(netx.find_cliques(input_mesh))
+    print("Clique number", max(len(clique) for clique in cliques))
+    
     input_mesh, info_on_pix = generate_init_node(input_mesh, config, min_node_in_cc=200)
     
     edge_ccs, input_mesh, edge_mesh = group_edges(input_mesh, config, image, remove_conflict_ordinal=False)
@@ -2195,6 +2216,8 @@ def write_ply(image,
                                                                                                             inpaint_iter=0,
                                                                                                             generator = generator)
     
+    print("Clique number", max(len(clique) for clique in cliques))
+    input_mesh = remove_long_edge(input_mesh)
     specific_edge_id = []
     edge_canvas = np.zeros((input_mesh.graph['H'], input_mesh.graph['W']))
     connect_points_ccs = [set() for _ in connect_points_ccs]
@@ -2233,7 +2256,8 @@ def write_ply(image,
                                                                                     specific_edge_loc,
                                                                                     inpaint_iter=1,
                                                                                     generator = generator)
-
+    input_mesh = remove_long_edge(input_mesh)
+    print("Clique number", max(len(clique) for clique in cliques))
     vertex_id = 0
     input_mesh.graph['H'], input_mesh.graph['W'] = input_mesh.graph['noext_H'], input_mesh.graph['noext_W']
     background_canvas = np.zeros((input_mesh.graph['H'],

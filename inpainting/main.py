@@ -37,7 +37,6 @@ os.makedirs(config['video_folder'], exist_ok=True)
 os.makedirs(config['depth_folder'], exist_ok=True)
 sample_list = get_MiDaS_samples(config['src_folder'], config['depth_folder'], config, config['specific'])
 normal_canvas, all_canvas = None, None
-print("sample list", sample_list)
 
 if isinstance(config["gpu_ids"], int) and (config["gpu_ids"] >= 0):
     device = config["gpu_ids"]
@@ -51,7 +50,7 @@ for idx in tqdm(range(len(sample_list))):
     sample = sample_list[idx]
     print("Current Source ==> ", sample['src_pair_name'])
     mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
-    image = imageio.imread(sample['ref_img_fi'])
+    image = imageio.imread(sample['ref_img_fi'])[:,:,:3]
 
     print(f"Running depth extraction at {time.time()}")
     if config['use_boostmonodepth'] is True:
@@ -80,7 +79,7 @@ for idx in tqdm(range(len(sample_list))):
     if config["use_real_depth"] is False:
         depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
     else:
-        depth = read_real_depth(sample['depth_fi'])
+        depth = read_real_depth(sample['depth_fi'], h=config["output_h"], w=config['output_w'])
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
     if not(config['load_ply'] is True and os.path.exists(mesh_fi)):
         vis_photos, vis_depths = sparse_bilateral_filtering(depth.copy(), image.copy(), config, num_iter=config['sparse_iter'], spdb=False)
