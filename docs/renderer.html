@@ -72,7 +72,7 @@
 				const scene_name = urlParams.get('scene') + '_panorama_2k_scaled.glb';
 
 				const loader = new GLTFLoader();
-                loader.load( 'https://vrmeshes.s3.us-west-1.amazonaws.com/'+ scene_name,
+                loader.load( '../results/bad_halde7.glb',
                     function ( glb ) {
                         console.log(glb.scene);
                         var geometry;

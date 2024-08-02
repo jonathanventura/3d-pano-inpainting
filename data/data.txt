@@ -1,1 +1,3 @@
-/monodepth/data/braunschweig_altstadt_panorama.png None
+/monodepth/data/dortmund_panorama.png None
+/monodepth/data/magnolienbaum_panorama.png None
+/monodepth/data/halde_panorama.png None
