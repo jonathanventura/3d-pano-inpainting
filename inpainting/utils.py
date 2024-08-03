@@ -1032,7 +1032,7 @@ def read_real_depth(disp_fi, h=None, w=None):
     
     if h is not None and w is not None:
         disp = resize(disp, (h, w), order=1)
-    return np.maximum(disp, 0.0005)
+    return np.maximum(disp, 1e-8)
 
 def follow_image_aspect_ratio(depth, image):
     H, W = image.shape[:2]

@@ -1887,7 +1887,7 @@ def DL_inpaint_edge(mesh,
         
         depth_dict['output'][depth_dict['mask'] > 0] = refine_depth_output[depth_dict['mask'] > 0]
         #print(depth_dict['output'])
-        print("shape of depth: " + str(depth_dict['output'].shape))
+        # print("shape of depth: " + str(depth_dict['output'].shape))
         rgb_dict = get_rgb_from_nodes(context_cc | extend_context_cc,
                                       erode_context_cc | extend_erode_context_ccs[edge_id], mask_cc, mesh.graph['H'], mesh.graph['W'], mesh)
         #print("context_shape" + str(rgb_dict["context"].shape))
@@ -1944,13 +1944,13 @@ def DL_inpaint_edge(mesh,
         """
         stride = 256
         condition_image = depth_dict['condition_image']
-        print(condition_image.shape)
-        print(resize_rgb_dict['rgb'].shape)
+        # print(condition_image.shape)
+        # print(resize_rgb_dict['rgb'].shape)
         if condition_image.shape[-1] != resize_rgb_dict['rgb'].shape[-1] or  condition_image.shape[-2] !=  resize_rgb_dict['rgb'].shape[-2]:
             condition_image = torch.nn.functional.interpolate(condition_image, (resize_rgb_dict['rgb'].shape[-2], resize_rgb_dict['rgb'].shape[-1]),
                                                                         mode='bilinear', align_corners=True)
-        print(condition_image.shape)
-        print(resize_rgb_dict['rgb'].shape)
+        # print(condition_image.shape)
+        # print(resize_rgb_dict['rgb'].shape)
         with torch.no_grad():
             if config['use_stable_diffusion']:
                 rgb_output = inpaint_Stable_Diffusion(specified_hole, 
@@ -2082,6 +2082,111 @@ def DL_inpaint_edge(mesh,
     return mesh, info_on_pix, specific_mask_nodes, new_edge_ccs, connnect_points_ccs, np_image
 
 
+def write_ply_no_inpainting(image,
+                            depth,
+                            int_mtx,
+                            ply_name,
+                            config):
+    depth = depth.astype(np.float64)
+    input_mesh, xy2depth, image, depth = create_mesh(depth, image, int_mtx, config)
+    H, W = input_mesh.graph['H'], input_mesh.graph['W']
+    input_mesh, info_on_pix = generate_init_node(input_mesh, config, min_node_in_cc=200)
+    vertex_id = 0
+    input_mesh.graph['H'], input_mesh.graph['W'] = input_mesh.graph['noext_H'], input_mesh.graph['noext_W']
+    background_canvas = np.zeros((input_mesh.graph['H'],
+                                  input_mesh.graph['W'],
+                                  3))
+    ply_flag = config.get('save_ply')
+    if ply_flag is True:
+        node_str_list = []
+    else:
+        node_str_color = []
+        node_str_point = []
+    out_fmt = lambda x, x_flag: str(x) if x_flag is True else x
+    point_time = 0
+    hlight_time = 0
+    cur_id_time = 0
+    node_str_time = 0
+    generate_face_time = 0
+    point_list = []
+    k_00, k_02, k_11, k_12 = \
+        input_mesh.graph['cam_param_pix_inv'][0, 0], input_mesh.graph['cam_param_pix_inv'][0, 2], \
+        input_mesh.graph['cam_param_pix_inv'][1, 1], input_mesh.graph['cam_param_pix_inv'][1, 2]
+    w_offset = input_mesh.graph['woffset']
+    h_offset = input_mesh.graph['hoffset']
+    for pix_xy, pix_list in info_on_pix.items():
+        for pix_idx, pix_info in enumerate(pix_list):
+            pix_depth = pix_info['depth'] if pix_info.get('real_depth') is None else pix_info['real_depth']
+            str_pt = [out_fmt(x, ply_flag) for x in reproject_3d_int_detail(pix_xy[0], pix_xy[1], pix_depth,
+                      k_00, k_02, k_11, k_12, w_offset, h_offset, H, W)]
+            if input_mesh.has_node((pix_xy[0], pix_xy[1], pix_info['depth'])) is False:
+                return False
+                continue
+            if pix_info.get('overlap_number') is not None:
+                str_color = [out_fmt(x, ply_flag) for x in (pix_info['color']/pix_info['overlap_number']).astype(np.uint8).tolist()]
+            else:
+                str_color = [out_fmt(x, ply_flag) for x in pix_info['color'].tolist()]
+            # if pix_info.get('edge_occlusion') is True:
+            #     str_color.append(out_fmt(4, ply_flag))
+            # else:
+            #     if pix_info.get('inpaint_id') is None:
+            #         str_color.append(out_fmt(1, ply_flag))
+            #     else:
+            #         str_color.append(out_fmt(pix_info.get('inpaint_id') + 1, ply_flag))
+            if pix_info.get('modified_border') is True or pix_info.get('ext_pixel') is True:
+                if len(str_color) == 4:
+                    str_color[-1] = out_fmt(5, ply_flag)
+                else:
+                    str_color.append(out_fmt(5, ply_flag))
+            pix_info['cur_id'] = vertex_id
+            input_mesh.nodes[(pix_xy[0], pix_xy[1], pix_info['depth'])]['cur_id'] = out_fmt(vertex_id, ply_flag)
+            vertex_id += 1
+            if ply_flag is True:
+                node_str_list.append(' '.join(str_pt) + ' ' + ' '.join(str_color) + ' ' + str(pix_idx) + ' ' + str(pix_xy[0]) + ' ' + str(pix_xy[1]) + '\n')
+            else:
+                node_str_color.append(str_color)
+                node_str_point.append(str_pt)
+    str_faces = generate_face(input_mesh, info_on_pix, config)
+    if config['save_ply'] is True:
+        print("Writing mesh file %s ..." % ply_name)
+        with open(ply_name, 'w') as ply_fi:
+            ply_fi.write('ply\n' + 'format ascii 1.0\n')
+            ply_fi.write('comment H ' + str(int(input_mesh.graph['H'])) + '\n')
+            ply_fi.write('comment W ' + str(int(input_mesh.graph['W'])) + '\n')
+            ply_fi.write('comment hFov ' + str(float(input_mesh.graph['hFov'])) + '\n')
+            ply_fi.write('comment vFov ' + str(float(input_mesh.graph['vFov'])) + '\n')
+            ply_fi.write('element vertex ' + str(len(node_str_list)) + '\n')
+            ply_fi.write('property float x\n' + \
+                         'property float y\n' + \
+                         'property float z\n' + \
+                         'property uchar red\n' + \
+                         'property uchar green\n' + \
+                         'property uchar blue\n' + \
+                         'property int index\n' + \
+                         'property int pix_x\n' + \
+                         'property int pix_y\n') 
+                        #  + \'property uchar alpha\n')
+            ply_fi.write('element face ' + str(len(str_faces)) + '\n')
+            ply_fi.write('property list uchar int vertex_index\n')
+            ply_fi.write('end_header\n')
+            ply_fi.writelines(node_str_list)
+            ply_fi.writelines(str_faces)
+        ply_fi.close()
+        return input_mesh
+    else:
+        H = int(input_mesh.graph['H'])
+        W = int(input_mesh.graph['W'])
+        hFov = input_mesh.graph['hFov']
+        vFov = input_mesh.graph['vFov']
+        node_str_color = np.array(node_str_color).astype(np.float32)
+        node_str_color[..., :3] = node_str_color[..., :3] / 255.
+        node_str_point = np.array(node_str_point)
+        str_faces = np.array(str_faces)
+
+        return node_str_point, node_str_color, str_faces, H, W, hFov, vFov
+
+
+
 def write_ply(image,
               depth,
               int_mtx,
@@ -2097,10 +2202,10 @@ def write_ply(image,
     index = 0
 
     H, W = input_mesh.graph['H'], input_mesh.graph['W']
-    input_mesh = remove_long_edge(input_mesh)
+    # input_mesh = remove_long_edge(input_mesh)
     input_mesh = tear_edges(input_mesh, config['depth_threshold'], xy2depth)
-    cliques = list(netx.find_cliques(input_mesh))
-    print("Clique number", max(len(clique) for clique in cliques))
+    # cliques = list(netx.find_cliques(input_mesh))
+    # print("Clique number", max(len(clique) for clique in cliques))
     
     input_mesh, info_on_pix = generate_init_node(input_mesh, config, min_node_in_cc=200)
     
@@ -2215,7 +2320,7 @@ def write_ply(image,
                                                                                                             inpaint_iter=0,
                                                                                                             generator = generator)
     
-    print("Clique number", max(len(clique) for clique in cliques))
+    # print("Clique number", max(len(clique) for clique in cliques))
     input_mesh = remove_long_edge(input_mesh)
     specific_edge_id = []
     edge_canvas = np.zeros((input_mesh.graph['H'], input_mesh.graph['W']))
