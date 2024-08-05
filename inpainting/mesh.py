@@ -119,8 +119,8 @@ def remove_long_edge(mesh):
     for edge in mesh.edges:
         edge_length = math.sqrt((abs(edge[0][0] - edge[1][0]) ** 2) + (abs(edge[0][1] - edge[1][1]) ** 2) + (abs(edge[0][2] - edge[1][2]) ** 2))
         if edge_length > 1.15 and edge_length < 2047 and abs(edge[1][2]) < 5.5 and abs(edge[0][2]) < 5.5:
-            print(edge_length)
-            print(edge[0], edge[1])
+            #print(edge_length)
+            #print(edge[0], edge[1])
             remove_edge_list.append((edge[0], edge[1]))
     mesh.remove_edges_from(remove_edge_list)
     
@@ -232,6 +232,9 @@ def generate_init_node(mesh, config, min_node_in_cc):
 def get_neighbors(mesh, node):
     return [*mesh.neighbors(node)]
 
+def node_distance(node_a, node_b):
+    return math.sqrt((abs(node_a[0] - node_b[0]) ** 2) + (abs(node_a[1] - node_b[1]) ** 2) + (abs(node_a[2] - node_b[2]) ** 2))
+
 def generate_face(mesh, info_on_pix, config):
     H, W = mesh.graph['H'], mesh.graph['W']
     str_faces = []
@@ -239,6 +242,7 @@ def generate_face(mesh, info_on_pix, config):
     ply_flag = config.get('save_ply')
     def out_fmt(input, cur_id_b, cur_id_self, cur_id_a, ply_flag):
         if ply_flag is True:
+            #print(' '.join(['3', cur_id_b, cur_id_self, cur_id_a]) + '\n')
             input.append(' '.join(['3', cur_id_b, cur_id_self, cur_id_a]) + '\n')
         else:
             input.append([cur_id_b, cur_id_self, cur_id_a])
@@ -246,33 +250,47 @@ def generate_face(mesh, info_on_pix, config):
     for node in mesh_nodes:
         cur_id_self = mesh_nodes[node]['cur_id']
         ne_nodes = get_neighbors(mesh, node)
+        #print("Node: ", node, "Neighbors: ", ne_nodes)
         four_dir_nes = {'up': [], 'left': [],
                         'down': [], 'right': []}
         for ne_node in ne_nodes:
             store_tuple = [ne_node, mesh_nodes[ne_node]['cur_id']]
             if ne_node[0] == node[0]:
-                if ne_node[1] == ne_node[1] - 1:
+                if ne_node[1] == node[1] - 1:
+                    print(ne_node[1])
                     four_dir_nes['left'].append(store_tuple)
                 else:
                     four_dir_nes['right'].append(store_tuple)
             else:
-                if ne_node[0] == ne_node[0] - 1:
+                if node[0] == ne_node[0] - 1:
+                    print(ne_node[1])
                     four_dir_nes['up'].append(store_tuple)
                 else:
                     four_dir_nes['down'].append(store_tuple)
         for node_a, cur_id_a in four_dir_nes['up']:
+            #print("UP")
             for node_b, cur_id_b in four_dir_nes['right']:
-                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                #print("UR", node, node_a, node_b)
+                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 4.5 and abs(node_b[2]) > 4.5):
+                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['right']:
             for node_b, cur_id_b in four_dir_nes['down']:
-                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                #print("RD", node, node_a, node_b)
+                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
+                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['down']:
             for node_b, cur_id_b in four_dir_nes['left']:
-                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                #print("DLEFT")
+                #print("DL", node, node_a, node_b)
+                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
+                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['left']:
+            #print("LEFT")
             for node_b, cur_id_b in four_dir_nes['up']:
-                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
-
+                #print("LU", node, node_a, node_b)
+                if (node_distance(node, node_a) < 1.05 and node_distance(node, node_b) < 1.05) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
+                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+    #print("STR Faces", str_faces)
     return str_faces
 
 def reassign_floating_island(mesh, info_on_pix, image, depth):
