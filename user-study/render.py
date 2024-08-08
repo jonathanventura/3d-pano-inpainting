@@ -11,7 +11,7 @@ def get_pose(radius, theta):
     print("theta: ", theta)
 
     # rotation matrix around the y-axis, translational shift
-    c = np.array([radius * np.sin(theta),0,radius * np.cos(theta)])
+    c = np.array([radius * np.sin(theta),2,radius * np.cos(theta)])
     R = Rotation.from_euler('Y',theta).as_matrix()
 
     pose = np.eye(4)
