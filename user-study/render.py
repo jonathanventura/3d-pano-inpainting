@@ -26,7 +26,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mesh', required=True)
     parser.add_argument('--out', required=True)
-    parser.add_argument('--distance', type=float, default = 2)
+    parser.add_argument('--distance', type=float, default = 2,
+    help='distance from center of scene (view pointing inward)')
+    parser.add_argument('--rotation', type=int, default=0, 
+    choices=[0,1,2,3,4],
+    help='''an int between 0-4 inclusive that generates the view from the chosen rotation * (pi/5),
+     as well as directly across from it (180 degrees)''')
     args = parser.parse_args()
 
     scene = pyrender.Scene()
@@ -58,8 +63,9 @@ def main():
     # set up camera
     camera = pyrender.PerspectiveCamera(yfov=np.pi / 2.0, aspectRatio=width/height, znear=.01, zfar=100)
 
+    angles = [(np.pi / 5) * (np.int64(args.rotation)), (np.pi / 5) * (np.int64(args.rotation) + 5)] 
     #angles = [np.pi/3, 2*np.pi/3, np.pi, 4*np.pi/3, 5 * np.pi/3, 2 * np.pi]
-    angles = np.linspace(0,2*np.pi,10,endpoint=False)#[np.pi/3, 2*np.pi/3, np.pi, 4*np.pi/3, 5 * np.pi/3, 2 * np.pi]
+    # angles = np.linspace(0,2*np.pi,10,endpoint=False)#[np.pi/3, 2*np.pi/3, np.pi, 4*np.pi/3, 5 * np.pi/3, 2 * np.pi]
 
     for i,x in enumerate(angles):
         camera_pose = get_pose(radius=np.float64(args.distance), theta=x)
