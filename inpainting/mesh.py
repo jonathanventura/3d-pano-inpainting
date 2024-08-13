@@ -2318,7 +2318,7 @@ def write_ply(image,
                                                                                                             generator = generator)
     
     # print("Clique number", max(len(clique) for clique in cliques))
-    input_mesh = remove_long_edge(input_mesh)
+    # input_mesh = remove_long_edge(input_mesh)
     specific_edge_id = []
     edge_canvas = np.zeros((input_mesh.graph['H'], input_mesh.graph['W']))
     connect_points_ccs = [set() for _ in connect_points_ccs]
