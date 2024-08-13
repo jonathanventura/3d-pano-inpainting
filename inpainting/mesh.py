@@ -28,7 +28,7 @@ from functools import reduce
 import math
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
 import math
-
+from scipy import stats
 
 def create_mesh(depth, image, int_mtx, config):
     H, W, C = image.shape
@@ -115,13 +115,122 @@ def remove_long_edge(mesh):
     remove_edge_list = []
     mesh_nodes = mesh.nodes
     edge_dict = {}
-    
+    lengths = []
+    max_z = 0
+    for node in mesh_nodes:
+        ne_nodes = get_neighbors(mesh, node)
+        four_dir_nes = {'up': [], 'left': [],
+                        'down': [], 'right': []}
+
+        for ne_node in ne_nodes:
+            if ne_node[0] == node[0]:
+                if ne_node[1] == node[1] - 1:
+                    four_dir_nes['left'].append(ne_node)
+                else:
+                    four_dir_nes['right'].append(ne_node)
+            else:
+                if node[0] == ne_node[0] - 1:
+                    four_dir_nes['up'].append(ne_node)
+                else:
+                    four_dir_nes['down'].append(ne_node)
+        for node_a in four_dir_nes['up']:
+            for node_b in four_dir_nes['right']:
+                node_dists = node_distance(node, node_a, node_b)
+                if abs(node[2]) > max_z:
+                    max_z = abs(node[2])
+                if abs(node_a[2]) > max_z:
+                    max_z = abs(node_a[2])
+                if abs(node_b[2]) > max_z:
+                    max_z = abs(node_b[2])
+                lengths.append(node_dists["ratio"])
+        for node_a in four_dir_nes['right']:
+            for node_b in four_dir_nes['down']:
+                node_dists = node_distance(node, node_a, node_b)
+                if abs(node[2]) > max_z:
+                    max_z = abs(node[2])
+                if abs(node_a[2]) > max_z:
+                    max_z = abs(node_a[2])
+                if abs(node_b[2]) > max_z:
+                    max_z = abs(node_b[2])
+                lengths.append(node_dists["ratio"])
+        for node_a in four_dir_nes['down']:
+            for node_b in four_dir_nes['left']:
+                node_dists = node_distance(node, node_a, node_b)
+                if abs(node[2]) > max_z:
+                    max_z = abs(node[2])
+                if abs(node_a[2]) > max_z:
+                    max_z = abs(node_a[2])
+                if abs(node_b[2]) > max_z:
+                    max_z = abs(node_b[2])
+                lengths.append(node_dists["ratio"])
+        for node_a in four_dir_nes['left']:
+            for node_b in four_dir_nes['up']:
+                node_dists = node_distance(node, node_a, node_b)
+                if abs(node[2]) > max_z:
+                    max_z = abs(node[2])
+                if abs(node_a[2]) > max_z:
+                    max_z = abs(node_a[2])
+                if abs(node_b[2]) > max_z:
+                    max_z = abs(node_b[2])
+                lengths.append(node_dists["ratio"])
+    #print(lengths)
+    too_long = np.percentile(lengths, 99.5)
+    too_far = 0.1 * max_z
+    print("too long", too_long)
+    print("too far", too_far)
+    longest_component = []
+    for node in mesh_nodes:
+        ne_nodes = get_neighbors(mesh, node)
+        four_dir_nes = {'up': [], 'left': [],
+                        'down': [], 'right': []}
+
+        for ne_node in ne_nodes:
+            if ne_node[0] == node[0]:
+                if ne_node[1] == node[1] - 1:
+                    four_dir_nes['left'].append(ne_node)
+                else:
+                    four_dir_nes['right'].append(ne_node)
+            else:
+                if node[0] == ne_node[0] - 1:
+                    four_dir_nes['up'].append(ne_node)
+                else:
+                    four_dir_nes['down'].append(ne_node)
+        for node_a in four_dir_nes['up']:
+            for node_b in four_dir_nes['right']:
+                node_dists = node_distance(node, node_a, node_b)
+                if node_dists["ratio"] > too_long and (node_dists["long_comp"] == "y" or node_dists["long_comp"] == "z") and (abs(node_dists["long_nodes"][0][2]) < too_far or abs(node_dists["long_nodes"][1][2]) < too_far):
+                    longest_component.append(node_dists["long_comp"])
+                    remove_edge_list.append((node_dists["long_nodes"][0], node_dists["long_nodes"][1]))
+        for node_a in four_dir_nes['right']:
+            for node_b in four_dir_nes['down']:
+                node_dists = node_distance(node, node_a, node_b)
+                if node_dists["ratio"] > too_long and (node_dists["long_comp"] == "y" or node_dists["long_comp"] == "z") and (abs(node_dists["long_nodes"][0][2]) < too_far or abs(node_dists["long_nodes"][1][2]) < too_far):
+                    longest_component.append(node_dists["long_comp"])
+                    remove_edge_list.append((node_dists["long_nodes"][0], node_dists["long_nodes"][1]))
+        for node_a in four_dir_nes['down']:
+            for node_b in four_dir_nes['left']:
+                node_dists = node_distance(node, node_a, node_b)
+                if node_dists["ratio"] > too_long and (node_dists["long_comp"] == "y" or node_dists["long_comp"] == "z") and (abs(node_dists["long_nodes"][0][2]) < too_far or abs(node_dists["long_nodes"][1][2]) < too_far):
+                    longest_component.append(node_dists["long_comp"])
+                    remove_edge_list.append((node_dists["long_nodes"][0], node_dists["long_nodes"][1]))
+        for node_a in four_dir_nes['left']:
+            for node_b in four_dir_nes['up']:
+                node_dists = node_distance(node, node_a, node_b)
+                if node_dists["ratio"] > too_long and (node_dists["long_comp"] == "y" or node_dists["long_comp"] == "z") and (abs(node_dists["long_nodes"][0][2]) < too_far or abs(node_dists["long_nodes"][1][2]) < too_far):
+                    longest_component.append(node_dists["long_comp"])
+                    remove_edge_list.append((node_dists["long_nodes"][0], node_dists["long_nodes"][1]))
+    #print(longest_component)
+    #print(stats.mode(longest_component))
+    """
     for edge in mesh.edges:
         edge_length = math.sqrt((abs(edge[0][0] - edge[1][0]) ** 2) + (abs(edge[0][1] - edge[1][1]) ** 2) + (abs(edge[0][2] - edge[1][2]) ** 2))
         if edge_length > 1.15 and edge_length < 2047 and abs(edge[1][2]) < 5.5 and abs(edge[0][2]) < 5.5:
             #print(edge_length)
             #print(edge[0], edge[1])
             remove_edge_list.append((edge[0], edge[1]))
+    """
+    print("total edges: ", len(list(mesh.edges)))
+    print("edges removed:", len(remove_edge_list))
     mesh.remove_edges_from(remove_edge_list)
     
     return mesh
@@ -232,8 +341,69 @@ def generate_init_node(mesh, config, min_node_in_cc):
 def get_neighbors(mesh, node):
     return [*mesh.neighbors(node)]
 
-def node_distance(node_a, node_b):
-    return math.sqrt((abs(node_a[0] - node_b[0]) ** 2) + (abs(node_a[1] - node_b[1]) ** 2) + (abs(node_a[2] - node_b[2]) ** 2))
+def node_distance(node, node_a, node_b):
+    distances = {}
+    edge1_len = math.sqrt((abs(node_a[0] - node[0]) ** 2) + (abs(node_a[1] - node[1]) ** 2) + (abs(node_a[2] - node[2]) ** 2))
+    edge1_xdist = abs(node_a[0] - node[0])
+    edge1_ydist = abs(node_a[1] - node[1])
+    edge1_zdist = abs(node_a[2] - node[2]) 
+    edge2_len = math.sqrt((abs(node[0] - node_b[0]) ** 2) + (abs(node[1] - node_b[1]) ** 2) + (abs(node[2] - node_b[2]) ** 2))
+    edge2_xdist = abs(node_b[0] - node[0])
+    edge2_ydist = abs(node_b[1] - node[1])
+    edge2_zdist = abs(node_b[2] - node[2]) 
+    short_edge = min(edge1_len, edge2_len)
+    long_edge = max(edge1_len, edge2_len) 
+    distances["ratio"] = long_edge / short_edge
+    
+
+    if short_edge == edge1_len:
+        distances["short_nodes"] = [node, node_a]
+        distances["long_nodes"] = [node, node_b]
+    else:
+        distances["short_nodes"] = [node, node_b]
+        distances["long_nodes"] = [node, node_a]
+    
+    if edge1_len == long_edge:
+        if edge2_zdist != 0:
+            distances["zratio"] = edge1_zdist / edge2_zdist
+        else:
+            distances["zratio"] = 0
+        if edge2_ydist != 0:
+            distances["yratio"] = edge1_ydist / edge2_ydist
+        else:
+            distances["yratio"] = 0
+        if edge2_xdist != 0:
+            distances["xratio"] = edge1_xdist / edge2_xdist
+        else:
+            distances["xratio"] = 0
+        if edge1_zdist >= edge1_ydist and edge1_zdist >= edge1_xdist:
+            distances["long_comp"] = "z"
+        elif edge1_ydist >= edge1_zdist and edge1_ydist >= edge1_xdist:
+            distances["long_comp"] = "y"
+        else:
+            distances["long_comp"] = "x"
+
+    if edge2_len == long_edge:
+        if edge1_zdist != 0:
+            distances["zratio"] = edge2_zdist / edge1_zdist
+        else:
+            distances["zratio"] = 0
+        if edge1_ydist != 0:
+            distances["yratio"] = edge2_ydist / edge1_ydist
+        else:
+            distances["yratio"] = 0
+        if edge1_xdist != 0:
+            distances["xratio"] = edge2_xdist / edge1_xdist
+        else:
+            distances["xratio"] = 0
+
+        if edge2_zdist >= edge2_ydist and edge2_zdist >= edge2_xdist:
+            distances["long_comp"] = "z"
+        elif edge2_ydist >= edge2_zdist and edge2_ydist >= edge2_xdist:
+            distances["long_comp"] = "y"
+        else:
+            distances["long_comp"] = "x"
+    return distances
 
 def generate_face(mesh, info_on_pix, config):
     H, W = mesh.graph['H'], mesh.graph['W']
@@ -242,7 +412,6 @@ def generate_face(mesh, info_on_pix, config):
     ply_flag = config.get('save_ply')
     def out_fmt(input, cur_id_b, cur_id_self, cur_id_a, ply_flag):
         if ply_flag is True:
-            #print(' '.join(['3', cur_id_b, cur_id_self, cur_id_a]) + '\n')
             input.append(' '.join(['3', cur_id_b, cur_id_self, cur_id_a]) + '\n')
         else:
             input.append([cur_id_b, cur_id_self, cur_id_a])
@@ -250,47 +419,33 @@ def generate_face(mesh, info_on_pix, config):
     for node in mesh_nodes:
         cur_id_self = mesh_nodes[node]['cur_id']
         ne_nodes = get_neighbors(mesh, node)
-        #print("Node: ", node, "Neighbors: ", ne_nodes)
         four_dir_nes = {'up': [], 'left': [],
                         'down': [], 'right': []}
         for ne_node in ne_nodes:
             store_tuple = [ne_node, mesh_nodes[ne_node]['cur_id']]
             if ne_node[0] == node[0]:
-                if ne_node[1] == node[1] - 1:
-                    print(ne_node[1])
+                if ne_node[1] == ne_node[1] - 1:
                     four_dir_nes['left'].append(store_tuple)
                 else:
                     four_dir_nes['right'].append(store_tuple)
             else:
-                if node[0] == ne_node[0] - 1:
-                    print(ne_node[1])
+                if ne_node[0] == ne_node[0] - 1:
                     four_dir_nes['up'].append(store_tuple)
                 else:
                     four_dir_nes['down'].append(store_tuple)
         for node_a, cur_id_a in four_dir_nes['up']:
-            #print("UP")
             for node_b, cur_id_b in four_dir_nes['right']:
-                #print("UR", node, node_a, node_b)
-                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 4.5 and abs(node_b[2]) > 4.5):
-                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['right']:
             for node_b, cur_id_b in four_dir_nes['down']:
-                #print("RD", node, node_a, node_b)
-                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
-                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['down']:
             for node_b, cur_id_b in four_dir_nes['left']:
-                #print("DLEFT")
-                #print("DL", node, node_a, node_b)
-                if (node_distance(node, node_a) < 1.03 and node_distance(node, node_b) < 1.03) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
-                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
         for node_a, cur_id_a in four_dir_nes['left']:
-            #print("LEFT")
             for node_b, cur_id_b in four_dir_nes['up']:
-                #print("LU", node, node_a, node_b)
-                if (node_distance(node, node_a) < 1.05 and node_distance(node, node_b) < 1.05) or (abs(node_a[2]) > 5.5 and abs(node_b[2]) > 5.5):
-                    out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
-    #print("STR Faces", str_faces)
+                out_fmt(str_faces, cur_id_b, cur_id_self, cur_id_a, ply_flag)
+
     return str_faces
 
 def reassign_floating_island(mesh, info_on_pix, image, depth):
@@ -2118,8 +2273,6 @@ def write_ply(image,
     H, W = input_mesh.graph['H'], input_mesh.graph['W']
     input_mesh = remove_long_edge(input_mesh)
     input_mesh = tear_edges(input_mesh, config['depth_threshold'], xy2depth)
-    cliques = list(netx.find_cliques(input_mesh))
-    print("Clique number", max(len(clique) for clique in cliques))
     
     input_mesh, info_on_pix = generate_init_node(input_mesh, config, min_node_in_cc=200)
     
@@ -2233,8 +2386,6 @@ def write_ply(image,
                                                                                                             specific_edge_loc,
                                                                                                             inpaint_iter=0,
                                                                                                             generator = generator)
-    
-    print("Clique number", max(len(clique) for clique in cliques))
     input_mesh = remove_long_edge(input_mesh)
     specific_edge_id = []
     edge_canvas = np.zeros((input_mesh.graph['H'], input_mesh.graph['W']))
@@ -2274,8 +2425,6 @@ def write_ply(image,
                                                                                     specific_edge_loc,
                                                                                     inpaint_iter=1,
                                                                                     generator = generator)
-    input_mesh = remove_long_edge(input_mesh)
-    print("Clique number", max(len(clique) for clique in cliques))
     vertex_id = 0
     input_mesh.graph['H'], input_mesh.graph['W'] = input_mesh.graph['noext_H'], input_mesh.graph['noext_W']
     background_canvas = np.zeros((input_mesh.graph['H'],
