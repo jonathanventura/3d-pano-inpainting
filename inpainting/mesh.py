@@ -154,16 +154,13 @@ def map_range(value, in_min, in_max, out_min, out_max):
 def reproject_3d_int_detail(sx, sy, z, k_00, k_02, k_11, k_12, w_offset, h_offset, H, W):
     abs_z = abs(z)
 
-    theta = map_range(sy, 0, W - 1, -math.pi, math.pi) # 1080
-    phi = map_range(sx, 0, H - 1, -math.pi/2, math.pi/2) # 600
+    phi = (sy+0.5) * 2 * np.pi / W
+    theta = (sx+0.5) * np.pi / H
+    X = -np.sin(phi)*np.sin(theta)
+    Y = np.cos(theta)
+    Z = np.cos(phi)*np.sin(theta)
 
-    X = math.sin(theta)*math.cos(phi)
-    Y = math.sin(phi)
-    Z = math.cos(theta)*math.cos(phi)
-
-    # abs_z = abs(Z)
-    ret = [abs_z * X, -1 * abs_z * Y, -1 * abs_z * Z]
-    # ret = [abs_z * X, abs_z * Y, abs_z * Z]
+    ret = [abs_z * X, abs_z * Y, abs_z * Z]
 
     return ret
 
