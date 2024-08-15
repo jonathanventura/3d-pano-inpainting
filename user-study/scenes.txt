@@ -1,10 +1,10 @@
-ascheberg
-braunschweig
-conference
+ascheberg 0
+braunschweig 1
+conference 2
 disney 2
 dortmund 0
 halde 3
 magnolienbaum 4
-martinsgasse
+martinsgasse 1
 soissons 0
-stapfelberg
+stapfelberg 3
