@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js vr - panorama with depth [user study redirect]</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link type="text/css" rel="stylesheet" href="main.css">
+</head>
+<body>
+    <h1>Redirect to User Study Scene</h1>
+    <label for="param1">Participant #:</label>
+    <input type="number" id="param1" min="1" max="10" step="1" placeholder="Enter participant group # (1-10)" required>
+    <br><br>
+    <label for="param2">Interval #:</label>
+    <input type="number" id="param2" min="1" max="10" step="1" placeholder="Enter user study interval # (1-10)" required>
+    <br><br>
+    <button onclick="openUrl()">Open URL</button>
+    <script>
+        function openUrl() {
+            // Get the values from the input fields
+            const param1 = document.getElementById('param1').value;
+            const param2 = document.getElementById('param2').value;
+
+            
+            scenes = ['ascheberg_DA_ip','ascheberg_DA_p2m', 'braunschweig_DA_ip','braunschweig_DA_p2m', 'conference_DA_ip', 'conference_DA_p2m', 'disney_DA_ip', 'disney_DA_p2m', 'dortmund_DA_ip', 'dortmund_DA_p2m']
+            
+            scene_index = Math.abs((param2 - param1) % 10 + 10) % 10 // make sure positive index
+            // alert(scene_index)
+            // alert(scenes[scene_index])
+
+            // Construct the URL
+            const url = `https://jonathanventura.github.io/3d-pano-inpainting/renderer.html?scene=${scenes[scene_index]}`;
+            
+            // Open the URL in a new tab
+            window.open(url, '_blank')
+        }
+    </script>
+</body>
+</html>
