@@ -72,23 +72,21 @@
 				const scene_name = urlParams.get('scene') + '.glb';
 
 				const loader = new GLTFLoader();
-                loader.load( 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/' + scene_name,
+				const url = 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/'
+                loader.load(  url + scene_name,
                     function ( glb ) {
                         console.log(glb.scene);
-                        var geometry;
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
-                                geometry = child.geometry;
+                                const geometry = child.geometry;
+								const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+		                        const mesh = new THREE.Mesh( geometry, material );
+        		                scene.add(mesh);
                             }
                         });
-                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        const mesh = new THREE.Mesh( geometry, material );
-
-                        scene.add(mesh);
                         progressBar.style.display = 'none'
                     },
-                
-
+					
                     function ( xhr ) {
                         if ( xhr.lengthComputable ) {
                             var percentComplete = (xhr.loaded / xhr.total) * 100;
