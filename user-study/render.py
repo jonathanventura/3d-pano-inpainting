@@ -74,9 +74,9 @@ def main():
 
         color, depth = r.render(scene, flags=pyrender.constants.RenderFlags.FLAT)
         # color = np.rot90(color, k=1)
-        imageio.imwrite(f"{args.out}_{args.distance}_{i}.png", color)
+        imageio.imwrite(f"{args.out}_{args.distance}_{i}.jpg", color)
 
-        print(f"Saved view {i} to {args.out}_{args.distance}_{i}.png")
+        print(f"Saved view {i} to {args.out}_{args.distance}_{i}.jpg")
 
         scene.remove_node(camera_node)
 

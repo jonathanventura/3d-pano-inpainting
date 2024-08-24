@@ -18,9 +18,7 @@ while read -r line; do
     python render.py --mesh "../results/${scene}_DA_p2m.glb" --distance 0.5 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_p2m"
     python render.py --mesh "../results/${scene}_DA_p2m.glb" --distance 1 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_p2m"
     python render.py --mesh "../results/${scene}_DA_p2m.glb" --distance 2 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_p2m"
-    python render.py --mesh "../results/${scene}_DA_p2m.glb" --distance 4 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_p2m"
     python render.py --mesh "../results/${scene}_DA_ip.glb" --distance 0.5 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_ip"
     python render.py --mesh "../results/${scene}_DA_ip.glb" --distance 1 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_ip"
     python render.py --mesh "../results/${scene}_DA_ip.glb" --distance 2 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_ip"
-    python render.py --mesh "../results/${scene}_DA_ip.glb" --distance 4 --rotation ${rotation} --out "../../../../data2/3d-pano-user-study/${scene}/${scene}_ip"
 done < scenes.txt
