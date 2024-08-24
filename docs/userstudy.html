@@ -21,7 +21,12 @@
             const param1 = document.getElementById('param1').value;
             const param2 = document.getElementById('param2').value;
 
-            
+            if (param1 < 1 || param1 > 10 || param2 < 1 || param2 > 10) {
+                // validation for latin square
+                alert("Both 'Participant #'' and 'Interval #'' must be between 1 and 10.");
+                return;
+            }
+
             scenes = ['ascheberg_DA_ip','ascheberg_DA_p2m', 'braunschweig_DA_ip','braunschweig_DA_p2m', 'conference_DA_ip', 'conference_DA_p2m', 'disney_DA_ip', 'disney_DA_p2m', 'dortmund_DA_ip', 'dortmund_DA_p2m']
             
             scene_index = Math.abs((param2 - param1) % 10 + 10) % 10 // make sure positive index
