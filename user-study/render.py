@@ -61,7 +61,7 @@ def main():
     # scene.add(sphere_mesh, pose=np.eye(4))
 
     # set up camera
-    camera = pyrender.PerspectiveCamera(yfov=np.pi / 2.0, aspectRatio=width/height, znear=.01, zfar=100)
+    camera = pyrender.PerspectiveCamera(yfov=np.pi / 2.0, aspectRatio=width/height, znear=.01, zfar=1000)
 
     angles = [(np.pi / 5) * (np.int64(args.rotation)), (np.pi / 5) * (np.int64(args.rotation) + 5)] 
     #angles = [np.pi/3, 2*np.pi/3, np.pi, 4*np.pi/3, 5 * np.pi/3, 2 * np.pi]
