@@ -2,11 +2,15 @@ import sklearn
 import numpy as np
 import trimesh
 from argparse import ArgumentParser
+import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 
 parser = ArgumentParser()
 parser.add_argument('input',help='path to input mesh')
 parser.add_argument('output',help='output path for scaled mesh')
+parser.add_argument('input2',help='path to second input mesh')
+parser.add_argument('output2',help='path to second input mesh')
 parser.add_argument('--bins',default=500,help='number of bins in histogram')
 parser.add_argument('--camera_height',default=2,help='camera height in meters')
 args = parser.parse_args()
@@ -43,3 +47,10 @@ mesh.vertices = vertices * 2 / abs(cluster_height)
 
 print('exporting mesh...')
 mesh.export(args.output)
+
+print('loading second mesh...')
+mesh2 = trimesh.load(args.input2)
+mesh2.vertices[:,1] -= cluster_height
+mesh2.vertices *= 2 / abs(cluster_height)
+print('exporting second mesh...') 
+mesh2.export(args.output2)
