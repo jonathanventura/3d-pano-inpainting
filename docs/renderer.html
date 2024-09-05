@@ -16,6 +16,8 @@
             }
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+				<script src="meshopt_decoder.js"></script>
+
 		<script>
 
 
@@ -78,19 +80,22 @@
 				const scene_name = 'assets/'  + urlParams.get('scene');
 
 				const loader = new GLTFLoader();
+				loader.setMeshoptDecoder(MeshoptDecoder);
                 loader.load( scene_name,
                     function ( glb ) {
                         console.log(glb.scene);
-                        var geometry;
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
-                                geometry = child.geometry;
+                                const geometry = child.geometry;
+								const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+		                        const mesh = new THREE.Mesh( geometry, material );
+        		                scene.add(mesh);
                             }
                         });
-                        const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
-                        const mesh = new THREE.Mesh( geometry, material );
+                        //const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+                        //const mesh = new THREE.Mesh( geometry, material );
 
-                        parent.add(mesh);
+                        //parent.add(mesh);
                         progressBar.style.display = 'none'
 
                     },
