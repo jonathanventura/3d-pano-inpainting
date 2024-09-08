@@ -16,11 +16,7 @@
             }
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-		<script>
-			
-			
-		</script>
-
+		<script src="meshopt_decoder.js"></script>
         <script type="importmap">
           {
             "imports": {
@@ -72,12 +68,15 @@
 				const scene_name = urlParams.get('scene') + '.glb';
 
 				const loader = new GLTFLoader();
+				loader.setMeshoptDecoder(MeshoptDecoder);
 				const url = 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/'
+				// const url = 'assets/';
                 loader.load(  url + scene_name,
                     function ( glb ) {
                         console.log(glb.scene);
                         glb.scene.traverse(function(child) {
                             if (child.isMesh) {
+								console.log(child);
                                 const geometry = child.geometry;
 								const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
 		                        const mesh = new THREE.Mesh( geometry, material );
@@ -107,6 +106,7 @@
 				renderer.xr.setReferenceSpaceType( 'local-floor' );
 				renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 				container.appendChild( renderer.domElement );
+				// renderer.antialias = true;
 
 				container.appendChild( VRButton.createButton( renderer ) );
 
