@@ -21,7 +21,7 @@ save_ply: True
 inference_video: True
 gpu_ids: 0
 offscreen_rendering: False
-img_format: '.jpg'
+img_format: '.png'
 depth_format: '.npy'
 require_midas: False
 depth_threshold: 0.04
@@ -45,8 +45,3 @@ extrapolation_thickness: 0
 repeat_inpaint_edge: True
 crop_border: [0.03, 0.03, 0.05, 0.03]
 anti_flickering: True
-use_stable_diffusion: False
-stable_diffusion_version: 1.5
-use_controlnet: False
-resize_patch: False
-use_real_depth: False

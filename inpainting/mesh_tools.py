@@ -773,25 +773,15 @@ def depth_inpainting(context_cc, extend_context_cc, erode_context_cc, mask_cc, m
     resize_mask = open_small_mask(tensor_depth_dict['mask'], tensor_depth_dict['context'], 3, 41)
     with torch.no_grad():
         device = config["gpu_ids"] if isinstance(config["gpu_ids"], int) and config["gpu_ids"] >= 0 else "cpu"
-        #print("mask_shape: " + str(resize_mask.shape))
-        #print("context_shape_d: " + str(tensor_depth_dict['context'].shape))
-        #print("depth_shape: " + str(tensor_depth_dict['zero_mean_depth'].shape))
-        #print("edge_shape: " + str(tensor_depth_dict['edge'].shape))
-        
         depth_output = depth_feat_model.forward_3P(resize_mask,
                                                     tensor_depth_dict['context'],
                                                     tensor_depth_dict['zero_mean_depth'],
                                                     tensor_depth_dict['edge'],
                                                     unit_length=128,
                                                     cuda=device)
-        #print(depth_output)
-        #print("output_shape: " + str(depth_output.shape))
         depth_output = depth_output.cpu()
-        #print("OS PATH: " + str(os.path.abspath(".")))
-    #try to condition on this later       
     tensor_depth_dict['output'] = torch.exp(depth_output + depth_dict['mean_depth']) * \
                                             tensor_depth_dict['mask'] + tensor_depth_dict['depth']
-    depth_dict['condition_image'] = tensor_depth_dict['output']
     patch_depth_dict['output'] = tensor_depth_dict['output'].data.cpu().numpy().squeeze()
     depth_dict['output'] = np.zeros((mesh.graph['H'], mesh.graph['W']))
     depth_dict['output'][union_size['x_min']:union_size['x_max'], union_size['y_min']:union_size['y_max']] = \
@@ -805,6 +795,7 @@ def depth_inpainting(context_cc, extend_context_cc, erode_context_cc, mask_cc, m
         ax1.imshow(depth_output * depth_dict['mask'] + depth_dict['depth']); ax2.imshow(depth_dict['output'] * depth_dict['mask'] + depth_dict['depth']); plt.show()
         import pdb; pdb.set_trace()
     depth_dict['output'] = depth_output * depth_dict['mask'] + depth_dict['depth'] * depth_dict['context']
+
     return depth_dict
 
 def update_info(mapping_dict, info_on_pix, *meshes):

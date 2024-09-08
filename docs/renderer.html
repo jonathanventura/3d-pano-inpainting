@@ -16,7 +16,8 @@
             }
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-		<script src="meshopt_decoder.js"></script>
+        <script src="meshopt_decoder.js"></script>
+
         <script type="importmap">
           {
             "imports": {
@@ -41,7 +42,8 @@
 			import Stats from 'three/addons/libs/stats.module.js';
 
 			let camera, scene, renderer, sphere, clock, controls;
-
+			let parent = new THREE.Group();
+			let cameraoffsetnode = new THREE.Group();
             const stats = new Stats();
             container.appendChild( stats.dom );
 
@@ -61,8 +63,13 @@
 				scene.add( light );
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
-				camera.position.set( 0, 2, 0 );
+				camera.position.set( 0.0, 1.6, 0.0 );
 				scene.add( camera );
+
+				scene.add(cameraoffsetnode);
+				cameraoffsetnode.translateY(-1.7);
+				cameraoffsetnode.add(parent);
+
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const scene_name = urlParams.get('scene') + '.glb';
@@ -83,9 +90,15 @@
         		                scene.add(mesh);
                             }
                         });
+                        //const material = new THREE.MeshBasicMaterial( { vertexColors: true } );
+                        //const mesh = new THREE.Mesh( geometry, material );
+
+                        //parent.add(mesh);
                         progressBar.style.display = 'none'
+
                     },
-					
+
+
                     function ( xhr ) {
                         if ( xhr.lengthComputable ) {
                             var percentComplete = (xhr.loaded / xhr.total) * 100;
@@ -103,7 +116,51 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.xr.enabled = true;
-				renderer.xr.setReferenceSpaceType( 'local-floor' );
+
+				//renderer.xr.setReferenceSpaceType( 'local-floor' );
+												function resetView(){
+
+													//const controller = event.target;
+													var cameraVR = renderer.xr.getCamera(camera);
+													let ref = cameraVR.cameras[0].matrix;
+													let refpos = new THREE.Vector3();
+													refpos.setFromMatrixPosition(ref);
+													console.log(refpos);
+													let pos = parent.position;
+													parent.translateX(refpos.x-pos.x);
+													parent.translateY(refpos.y-pos.y);
+													parent.translateZ(refpos.z-pos.z);
+												}
+
+
+				                var controller1, controller2;
+				                function onSelectEnd( event ) {
+				                   resetView();
+				                }
+				                function onSqueezeEnd( event ) {
+				                    //sceneNum = (sceneNum + 1)%10;
+				                    //updateScene(mode,sceneNum);
+				                }
+
+				                controller1 = renderer.xr.getController( 0 );
+				                //controller1.addEventListener( 'selectstart', onSelectStart );
+				                controller1.addEventListener( 'selectend', onSelectEnd );
+				                scene.add( controller1 );
+
+				                controller2 = renderer.xr.getController( 1 );
+				                //controller2.addEventListener( 'selectstart', onSelectStart );
+				                controller2.addEventListener( 'selectend', onSelectEnd );
+				                scene.add( controller2 );
+
+				                controller1 = renderer.xr.getController( 0 );
+				                controller1.addEventListener( 'squeezeend', onSqueezeEnd );
+				                scene.add( controller1 );
+
+				                controller2 = renderer.xr.getController( 1 );
+				                controller2.addEventListener( 'squeezend', onSqueezeEnd );
+				                scene.add( controller2 );
+
+
 				renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 				container.appendChild( renderer.domElement );
 				// renderer.antialias = true;
@@ -127,6 +184,22 @@
 
 				window.addEventListener( 'resize', onWindowResize );
 
+
+				renderer.xr.addEventListener('sessionstart', () => {
+	    const cameraVR = renderer.xr.getCamera(camera);
+
+	    // Wait for a short delay to ensure everything is initialized (if needed)
+	    setTimeout(() => {
+	        if (cameraVR.cameras && cameraVR.cameras.length > 0) {
+	            console.log('VR Cameras:', cameraVR.cameras); // Should contain left and right eye cameras
+	        } else {
+	            console.error('VR Cameras array is empty or not yet initialized.');
+	        }
+	    }, 100); // Adjust delay as needed
+	});
+
+
+
 			}
 
             function onInteractionEnd() {
@@ -139,6 +212,7 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize( window.innerWidth, window.innerHeight );
+
 
 			}
 

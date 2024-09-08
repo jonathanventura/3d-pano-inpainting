@@ -839,69 +839,7 @@ def clean_far_edge(mask_edge, mask_edge_with_id, context_edge, mask, info_on_pix
     return far_edge, uncleaned_far_edge, far_edge_with_id, near_edge_with_id
 
 def get_MiDaS_samples(image_folder, depth_folder, config, specific=None, aft_certain=None):
-    lines = [os.path.splitext(os.path.basename(xx)) for xx in (glob.glob(os.path.join(image_folder, '*.png')) + glob.glob(os.path.join(image_folder, '*.jpg')) + glob.glob(os.path.join(image_folder, '*.jpeg')))]
-    print(lines)
-    samples = []
-    generic_pose = np.eye(4)
-    
-    assert len(config['traj_types']) == len(config['x_shift_range']) ==\
-           len(config['y_shift_range']) == len(config['z_shift_range']) == len(config['video_postfix']), \
-           "The number of elements in 'traj_types', 'x_shift_range', 'y_shift_range', 'z_shift_range' and \
-               'video_postfix' should be equal."
-    
-    tgt_pose = [[generic_pose * 1]]
-    tgts_poses = []
-    for traj_idx in range(len(config['traj_types'])):
-        tgt_poses = []
-        sx, sy, sz = path_planning(config['num_frames'], config['x_shift_range'][traj_idx], config['y_shift_range'][traj_idx],
-                                   config['z_shift_range'][traj_idx], path_type=config['traj_types'][traj_idx])
-        for xx, yy, zz in zip(sx, sy, sz):
-            tgt_poses.append(generic_pose * 1.)
-            tgt_poses[-1][:3, -1] = np.array([xx, yy, zz])
-        tgts_poses += [tgt_poses]    
-    tgt_pose = generic_pose * 1
-    aft_flag = True
-    if aft_certain is not None and len(aft_certain) > 0:
-        aft_flag = False
-    for seq_dir in lines:
-        if specific is not None and len(specific) > 0:
-            if specific != seq_dir:
-                continue
-        if aft_certain is not None and len(aft_certain) > 0:
-            if aft_certain == seq_dir:
-                aft_flag = True
-            if aft_flag is False:
-                continue
-        samples.append({})
-        sdict = samples[-1]            
-        sdict['depth_fi'] = os.path.join(depth_folder, seq_dir[0] + config['depth_format'])
-        sdict['ref_img_fi'] = os.path.join(image_folder, seq_dir[0] + seq_dir[1])
-        H, W = imageio.imread(sdict['ref_img_fi']).shape[:2]
-        if os.path.exists('./0001_rgb_cam_all.json'):
-            f = open('./0001_rgb_cam_all.json')
-            data = json.load(f)
-            sdict['int_mtx'] = np.array(data[str(int(seq_dir[0][-3:]))]["intrinsics"]["matrix"]).astype(np.float32)
-            print(sdict['int_mtx'])
-        else:
-            sdict['int_mtx'] = np.array([[max(H, W), 0, W//2], [0, max(H, W), H//2], [0, 0, 1]]).astype(np.float32)
-        if sdict['int_mtx'].max() > 1:
-            sdict['int_mtx'][0, :] = sdict['int_mtx'][0, :] / float(W)
-            sdict['int_mtx'][1, :] = sdict['int_mtx'][1, :] / float(H)
-        sdict['ref_pose'] = np.eye(4)
-        sdict['tgt_pose'] = tgt_pose
-        sdict['tgts_poses'] = tgts_poses
-        sdict['video_postfix'] = config['video_postfix']
-        sdict['tgt_name'] = [os.path.splitext(os.path.basename(sdict['depth_fi']))[0]]
-        sdict['src_pair_name'] = sdict['tgt_name'][0]
-
-    return samples
-    
-
-
-
-def new_MiDaS_samples(image_folder, depth_folder, config, specific=None, aft_certain=None):
     lines = [os.path.splitext(os.path.basename(xx))[0] for xx in glob.glob(os.path.join(image_folder, '*' + config['img_format']))]
-   
     samples = []
     generic_pose = np.eye(4)
     assert len(config['traj_types']) == len(config['x_shift_range']) ==\
@@ -1023,16 +961,6 @@ def read_MiDaS_depth(disp_fi, disp_rescale=10., h=None, w=None):
     depth = 1. / np.maximum(disp, 0.05)
 
     return depth
-
-def read_real_depth(disp_fi, h=None, w=None):
-    if 'npy' in os.path.splitext(disp_fi)[-1]:
-        disp = np.load(disp_fi)
-    else:
-        disp = imageio.imread(disp_fi).astype(np.float32)
-    
-    if h is not None and w is not None:
-        disp = resize(disp, (h, w), order=1)
-    return np.maximum(disp, 1e-8)
 
 def follow_image_aspect_ratio(depth, image):
     H, W = image.shape[:2]

@@ -10,7 +10,7 @@ import yaml
 import time
 import sys
 from mesh import write_ply, read_ply, output_3d_photo
-from utils import get_MiDaS_samples, read_MiDaS_depth, read_real_depth
+from utils import get_MiDaS_samples, read_MiDaS_depth
 import torch
 import cv2
 from skimage.transform import resize
@@ -23,7 +23,6 @@ from MiDaS.monodepth_net import MonoDepthNet
 import MiDaS.MiDaS_utils as MiDaS_utils
 from bilateral_filtering import sparse_bilateral_filtering
 from skimage import color
-from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
@@ -49,7 +48,7 @@ for idx in tqdm(range(len(sample_list))):
     sample = sample_list[idx]
     print("Current Source ==> ", sample['src_pair_name'])
     mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
-    image = imageio.imread(sample['ref_img_fi'])[:,:,:3]
+    image = imageio.imread(sample['ref_img_fi'])
 
     print(f"Running depth extraction at {time.time()}")
     if config['use_boostmonodepth'] is True:
@@ -58,7 +57,7 @@ for idx in tqdm(range(len(sample_list))):
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
                   config['MiDaS_model_ckpt'], MonoDepthNet, MiDaS_utils, target_w=640)
     print(sample['depth_fi'])
-    print("Depth shape", np.load(sample['depth_fi']).shape)
+    print(np.load(sample['depth_fi']).shape)
 
     if 'npy' in config['depth_format']:
         config['output_h'], config['output_w'] = np.load(sample['depth_fi']).shape[:2]
@@ -73,12 +72,9 @@ for idx in tqdm(range(len(sample_list))):
         config['gray_image'] = True
     else:
         config['gray_image'] = False
-    print("Width, height:", config['output_w'],config['output_h'])
+    print(config['output_w'],config['output_h'])
     image = cv2.resize(image, (config['output_w'], config['output_h']), interpolation=cv2.INTER_AREA)
-    if config["use_real_depth"] is False:
-        depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
-    else:
-        depth = read_real_depth(sample['depth_fi'], h=config["output_h"], w=config['output_w'])
+    depth = read_MiDaS_depth(sample['depth_fi'], 3.0, config['output_h'], config['output_w'])
     mean_loc_depth = depth[depth.shape[0]//2, depth.shape[1]//2]
     if not(config['load_ply'] is True and os.path.exists(mesh_fi)):
         vis_photos, vis_depths = sparse_bilateral_filtering(depth.copy(), image.copy(), config, num_iter=config['sparse_iter'], spdb=False)
@@ -103,35 +99,12 @@ for idx in tqdm(range(len(sample_list))):
         depth_feat_model.eval()
         depth_feat_model = depth_feat_model.to(device)
         print(f"Loading rgb model at {time.time()}")
-        if config['use_stable_diffusion']:
-            device = "cuda"
-            if config["use_controlnet"]:
-                model_path = "runwayml/stable-diffusion-inpainting"
-                controlnet_path =  "fusing/stable-diffusion-v1-5-controlnet-depth"
-                controlnet = ControlNetModel.from_pretrained(
-                                                        controlnet_path, torch_dtype=torch.float16
-                                                    ).to(device)
-                rgb_model = StableDiffusionControlNetInpaintPipeline.from_pretrained(
-                                                                        model_path,
-                                                                        controlnet = controlnet,
-                                                                        torch_dtype=torch.float16,
-                                                                    ).to(device)
-            else:
-                if config["stable_diffusion_version"] == 2:
-                    model_path = "stabilityai/stable-diffusion-2-inpainting"
-                else:
-                     model_path = "runwayml/stable-diffusion-inpainting"
-                rgb_model = StableDiffusionInpaintPipeline.from_pretrained(
-                        model_path,
-                        torch_dtype=torch.float16,
-                    ).to(device)
-        else:
-            rgb_model = Inpaint_Color_Net()
-            rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
-                                        map_location=torch.device(device))
-            rgb_model.load_state_dict(rgb_feat_weight)
-            rgb_model.eval()
-            rgb_model = rgb_model.to(device)
+        rgb_model = Inpaint_Color_Net()
+        rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
+                                     map_location=torch.device(device))
+        rgb_model.load_state_dict(rgb_feat_weight)
+        rgb_model.eval()
+        rgb_model = rgb_model.to(device)
         graph = None
 
 

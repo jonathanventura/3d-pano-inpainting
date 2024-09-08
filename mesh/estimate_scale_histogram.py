@@ -2,7 +2,6 @@ import sklearn
 import numpy as np
 import trimesh
 from argparse import ArgumentParser
-from matplotlib import pyplot as plt
 
 parser = ArgumentParser()
 parser.add_argument('input',help='path to input mesh')
@@ -21,13 +20,8 @@ plane = vertices[:, :2]
 print(f'building histogram with {args.bins} bins...')
 hist, bin_edges = np.histogram(Y, bins=args.bins)
 
-plt.bar(bin_edges[:-1], hist, width=np.diff(bin_edges), edgecolor='black')
-plt.savefig("new_hist")
-plt.show()
-
 print(hist)
 max_bin_index = np.argmax(hist)
-
 
 Y_max_bin = Y[(Y>bin_edges[max_bin_index])&(Y<=bin_edges[max_bin_index+1])]
 
