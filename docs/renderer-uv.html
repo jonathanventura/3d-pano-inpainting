@@ -14,6 +14,15 @@
                 top: 10px;
                 margin-left: -250px;
             }
+			#info {
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+				color:white;
+			}
         </style>
         <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
         <script src="meshopt_decoder.js"></script>
@@ -30,6 +39,8 @@
 	<body>
         <progress value="0" max="100" id="progressBar"></progress>
 		<div id="container"></div>
+		<div id="info">FPS: </div>
+		<canvas id="fps" width="256" height="256"></canvas>
 
 		<script type="module">
 
@@ -41,7 +52,8 @@
             import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import Stats from 'three/addons/libs/stats.module.js';
 
-			let camera, scene, renderer, sphere, clock, controls;
+			let camera, scene, renderer, sphere, clock, controls, canvas, fpsMaterial, fpsPlane;
+			let frames = 0, prevTime = performance.now();
 			let parent = new THREE.Group();
 			let cameraoffsetnode = new THREE.Group();
             const stats = new Stats();
@@ -57,24 +69,42 @@
 				clock = new THREE.Clock();
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x101010 );
+				scene.background = new THREE.Color( 0x000000 );
+				// scene.background = new THREE.Color( 0xffffff );
 
 				const light = new THREE.AmbientLight( 0xffffff, 1 );
 				scene.add( light );
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, .1, 200 );
 				camera.position.set( 0.0, 1.6, 0.0 );
+				// camera.position.set( 0.0, 0.0, 10.0 );
 				scene.add( camera );
 
 				scene.add(cameraoffsetnode);
 				cameraoffsetnode.translateY(-1.7);
 				cameraoffsetnode.add(parent);
 
+				var fpsCanvas = document.getElementById('fps');
+				var fpsContext = fpsCanvas.getContext('2d');
+				fpsCanvas.width = 128;
+				fpsCanvas.height = 128;
+				fpsContext.fillStyle = '#fffffff';
+				fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
+				fpsContext.fillStyle = '#ff00ff';
+				fpsContext.font = "24px sans-serif";
+				fpsContext.fillText("FPS: ", 16, 32, fpsCanvas.width);
+
+				const fpsGeometry = new THREE.PlaneGeometry( 1, 1 );
+				const texture = new THREE.CanvasTexture(fpsCanvas);
+				fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
+				fpsPlane = new THREE.Mesh( fpsGeometry, fpsMaterial );
+				camera.add( fpsPlane );
+				fpsPlane.position.set(0,0,-4);
 
 				const urlParams = new URLSearchParams(window.location.search);
 				// const scene_name = urlParams.get('scene') + '.glb';
-				const scene_name = "basel_martinsgasse_4k_opt.glb";
-
+				const scene_name = "basel_martinsgasse_2k_opt.glb";
+				
 				const loader = new GLTFLoader();
 				loader.setMeshoptDecoder(MeshoptDecoder);
 				// const url = 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/'
@@ -89,6 +119,7 @@
 								console.log(child);
                                 const geometry = child.geometry;
 								const material = new THREE.MeshBasicMaterial( { map: child.material.map } );
+								material.map.minFilter = THREE.NearestFilter;
 		                        const mesh = new THREE.Mesh( geometry, material );
         		                scene.add(mesh);
                             }
@@ -114,7 +145,7 @@
                         console.log( error );
                     }
                 );
-
+				
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
@@ -231,6 +262,28 @@
 				}
 
 				stats.update();
+				frames++;
+				const time = performance.now();
+				
+				if ( time >= prevTime + 1000 ) {
+					const info = document.getElementById( 'info' );
+					const fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) );
+					// info.textContent = "FPS: " + fps;
+					var fpsCanvas = document.getElementById('fps');
+					var fpsContext = fpsCanvas.getContext('2d');
+					fpsContext.fillStyle = '#000000';
+					fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
+					fpsContext.fillStyle = '#ff00ff';
+					fpsContext.font = "24px sans-serif";
+					fpsContext.fillText("FPS: " + fps, 16, 32, fpsCanvas.width);
+					// const texture = new THREE.CanvasTexture(canvas);
+					// fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
+					// fpsPlane.material  = fpsMaterial;//.map.needsUpdate = true;
+					fpsPlane.material.map.needsUpdate = true;
+					fpsPlane.material.needsUpdate = true;
+					frames = 0;
+					prevTime = time;
+				}
 
 				renderer.render( scene, camera );
 
