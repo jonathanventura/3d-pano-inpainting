@@ -11,6 +11,8 @@ RUN apt-get install --no-install-recommends -y \
         python3-pip
 
 RUN pip install torch torchvision opencv-python-headless transforms3d networkx scikit-image tqdm pyyaml matplotlib
+RUN pip install "jax[cuda12_pip]==0.4.13" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+RUN pip install -qq -U diffusers transformers ftfy gradio accelerate
 
 WORKDIR "/inpainting"
 COPY . ./

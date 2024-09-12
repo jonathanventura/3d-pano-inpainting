@@ -962,6 +962,16 @@ def read_MiDaS_depth(disp_fi, disp_rescale=10., h=None, w=None):
 
     return depth
 
+def read_real_depth(disp_fi, h=None, w=None):
+    if 'npy' in os.path.splitext(disp_fi)[-1]:
+        disp = np.load(disp_fi)
+    else:
+        disp = imageio.imread(disp_fi).astype(np.float32)
+    
+    if h is not None and w is not None:
+        disp = resize(disp, (h, w), order=1)
+    return np.maximum(disp, 1e-8)
+
 def follow_image_aspect_ratio(depth, image):
     H, W = image.shape[:2]
     image_aspect_ratio = H / W

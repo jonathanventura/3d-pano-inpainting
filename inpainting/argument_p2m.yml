@@ -50,3 +50,4 @@ stable_diffusion_version: 1.5
 use_controlnet: False
 resize_patch: False
 use_real_depth: False
+tear_edges: True

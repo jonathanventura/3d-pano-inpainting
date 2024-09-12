@@ -9,24 +9,23 @@ from tqdm import tqdm
 import yaml
 import time
 import sys
-from mesh import write_ply, read_ply, output_3d_photo
+from mesh import  write_ply_no_inpainting
 from utils import get_MiDaS_samples, read_MiDaS_depth, read_real_depth
 import torch
 import cv2
 from skimage.transform import resize
 import imageio
 import copy
-from networks import Inpaint_Color_Net, Inpaint_Depth_Net, Inpaint_Edge_Net
 from MiDaS.run import run_depth
 from boostmonodepth_utils import run_boostmonodepth
 from MiDaS.monodepth_net import MonoDepthNet
 import MiDaS.MiDaS_utils as MiDaS_utils
 from bilateral_filtering import sparse_bilateral_filtering
 from skimage import color
-from diffusers import StableDiffusionInpaintPipeline, StableDiffusionControlNetInpaintPipeline, ControlNetModel
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
+parser.add_argument('--config', type=str, default='argument_p2m.yml',help='Configure of post processing')
 args = parser.parse_args()
 config = yaml.load(open(args.config, 'r'), Loader=yaml.Loader)
 #if config['offscreen_rendering'] is True:
@@ -48,7 +47,7 @@ for idx in tqdm(range(len(sample_list))):
     depth = None
     sample = sample_list[idx]
     print("Current Source ==> ", sample['src_pair_name'])
-    mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
+    mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] + "_p2m" +'.ply')
     image = imageio.imread(sample['ref_img_fi'])[:,:,:3]
 
     print(f"Running depth extraction at {time.time()}")
@@ -85,74 +84,23 @@ for idx in tqdm(range(len(sample_list))):
         depth = vis_depths[-1]
         model = None
         torch.cuda.empty_cache()
-        print("Start Running 3D_Photo ...")
-        print(f"Loading edge model at {time.time()}")
-        depth_edge_model = Inpaint_Edge_Net(init_weights=True)
-        depth_edge_weight = torch.load(config['depth_edge_model_ckpt'],
-                                       map_location=torch.device(device))
-        depth_edge_model.load_state_dict(depth_edge_weight)
-        depth_edge_model = depth_edge_model.to(device)
-        depth_edge_model.eval()
-
-        print(f"Loading depth model at {time.time()}")
-        depth_feat_model = Inpaint_Depth_Net()
-        depth_feat_weight = torch.load(config['depth_feat_model_ckpt'],
-                                       map_location=torch.device(device))
-        depth_feat_model.load_state_dict(depth_feat_weight, strict=True)
-        depth_feat_model = depth_feat_model.to(device)
-        depth_feat_model.eval()
-        depth_feat_model = depth_feat_model.to(device)
-        print(f"Loading rgb model at {time.time()}")
-        if config['use_stable_diffusion']:
-            device = "cuda"
-            if config["use_controlnet"]:
-                model_path = "runwayml/stable-diffusion-inpainting"
-                controlnet_path =  "fusing/stable-diffusion-v1-5-controlnet-depth"
-                controlnet = ControlNetModel.from_pretrained(
-                                                        controlnet_path, torch_dtype=torch.float16
-                                                    ).to(device)
-                rgb_model = StableDiffusionControlNetInpaintPipeline.from_pretrained(
-                                                                        model_path,
-                                                                        controlnet = controlnet,
-                                                                        torch_dtype=torch.float16,
-                                                                    ).to(device)
-            else:
-                if config["stable_diffusion_version"] == 2:
-                    model_path = "stabilityai/stable-diffusion-2-inpainting"
-                else:
-                     model_path = "runwayml/stable-diffusion-inpainting"
-                rgb_model = StableDiffusionInpaintPipeline.from_pretrained(
-                        model_path,
-                        torch_dtype=torch.float16,
-                    ).to(device)
-        else:
-            rgb_model = Inpaint_Color_Net()
-            rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
-                                        map_location=torch.device(device))
-            rgb_model.load_state_dict(rgb_feat_weight)
-            rgb_model.eval()
-            rgb_model = rgb_model.to(device)
-        graph = None
-
-
+        print("Start Running Pano2Mesh ...")
         print(f"Writing depth ply (and basically doing everything) at {time.time()}")
-        rt_info = write_ply(image,
+        rt_info = write_ply_no_inpainting(image,
                               depth,
                               sample['int_mtx'],
                               mesh_fi,
-                              config,
-                              rgb_model,
-                              depth_edge_model,
-                              depth_edge_model,
-                              depth_feat_model)
+                              config)
 
-        if rt_info is False:
-            continue
-        rgb_model = None
-        color_feat_model = None
-        depth_edge_model = None
-        depth_feat_model = None
-        torch.cuda.empty_cache()
+      
+
+        # if rt_info is False:
+        #     continue
+        # rgb_model = None
+        # color_feat_model = None
+        # depth_edge_model = None
+        # depth_feat_model = None
+        # torch.cuda.empty_cache()
     #if config['save_ply'] is True or config['load_ply'] is True:
         #verts, colors, faces, Height, Width, hFov, vFov = read_ply(mesh_fi)
     #else:

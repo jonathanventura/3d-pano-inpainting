@@ -782,6 +782,7 @@ def depth_inpainting(context_cc, extend_context_cc, erode_context_cc, mask_cc, m
         depth_output = depth_output.cpu()
     tensor_depth_dict['output'] = torch.exp(depth_output + depth_dict['mean_depth']) * \
                                             tensor_depth_dict['mask'] + tensor_depth_dict['depth']
+    depth_dict['condition_image'] = tensor_depth_dict['output']
     patch_depth_dict['output'] = tensor_depth_dict['output'].data.cpu().numpy().squeeze()
     depth_dict['output'] = np.zeros((mesh.graph['H'], mesh.graph['W']))
     depth_dict['output'][union_size['x_min']:union_size['x_max'], union_size['y_min']:union_size['y_max']] = \
