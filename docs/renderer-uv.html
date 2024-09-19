@@ -103,13 +103,14 @@
 
 				const urlParams = new URLSearchParams(window.location.search);
 				// const scene_name = urlParams.get('scene') + '.glb';
-				const scene_name = "basel_martinsgasse_4k_opt.glb";
+				// const scene_name = "ascheberg_kirchplatz_4k_inpaint_opt.glb";
+				const scene_name = "halde_zollern_nebel_4k_inpaint_opt.glb";
 				
 				const loader = new GLTFLoader();
 				loader.setMeshoptDecoder(MeshoptDecoder);
 				// const url = 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/'
 				const url = 'https://3d-pano-inpainting.s3.us-west-2.amazonaws.com/';
-				// const url = 'assets/';
+				// const url = 'assets/4k/';
 				console.log(url+scene_name);
                 loader.load(  url + scene_name,
                     function ( glb ) {
