@@ -124,6 +124,9 @@
 								const material = new THREE.MeshBasicMaterial( { map: child.material.map } );
 								material.map.minFilter = THREE.NearestFilter;
 		                        const mesh = new THREE.Mesh( geometry, material );
+								console.log(mesh.scale);
+								mesh.scale.set(2,2,2);
+								console.log(mesh.scale);
         		                scene.add(mesh);
                             }
                         });
