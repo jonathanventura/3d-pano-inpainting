@@ -39,8 +39,9 @@
 	<body>
         <progress value="0" max="100" id="progressBar"></progress>
 		<div id="container"></div>
+		<!--
 		<div id="info">FPS: </div>
-		<canvas id="fps" width="256" height="256"></canvas>
+		<canvas id="fps" width="256" height="256"></canvas> -->
 
 		<script type="module">
 
@@ -84,22 +85,22 @@
 				cameraoffsetnode.translateY(-1.7);
 				cameraoffsetnode.add(parent);
 
-				var fpsCanvas = document.getElementById('fps');
-				var fpsContext = fpsCanvas.getContext('2d');
-				fpsCanvas.width = 128;
-				fpsCanvas.height = 128;
-				fpsContext.fillStyle = '#fffffff';
-				fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
-				fpsContext.fillStyle = '#ff00ff';
-				fpsContext.font = "24px sans-serif";
-				fpsContext.fillText("FPS: ", 16, 32, fpsCanvas.width);
+				// var fpsCanvas = document.getElementById('fps');
+				// var fpsContext = fpsCanvas.getContext('2d');
+				// fpsCanvas.width = 128;
+				// fpsCanvas.height = 128;
+				// fpsContext.fillStyle = '#fffffff';
+				// fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
+				// fpsContext.fillStyle = '#ff00ff';
+				// fpsContext.font = "24px sans-serif";
+				// fpsContext.fillText("FPS: ", 16, 32, fpsCanvas.width);
 
-				const fpsGeometry = new THREE.PlaneGeometry( 1, 1 );
-				const texture = new THREE.CanvasTexture(fpsCanvas);
-				fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
-				fpsPlane = new THREE.Mesh( fpsGeometry, fpsMaterial );
-				camera.add( fpsPlane );
-				fpsPlane.position.set(0,0,-4);
+				// const fpsGeometry = new THREE.PlaneGeometry( 1, 1 );
+				// const texture = new THREE.CanvasTexture(fpsCanvas);
+				// fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
+				// fpsPlane = new THREE.Mesh( fpsGeometry, fpsMaterial );
+				// camera.add( fpsPlane );
+				// fpsPlane.position.set(0,0,-4);
 
 				const urlParams = new URLSearchParams(window.location.search);
 				const scene_name = urlParams.get('scene') + '.glb';
@@ -265,27 +266,27 @@
 
 				stats.update();
 				frames++;
-				const time = performance.now();
+				// const time = performance.now();
 				
-				if ( time >= prevTime + 1000 ) {
-					const info = document.getElementById( 'info' );
-					const fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) );
-					// info.textContent = "FPS: " + fps;
-					var fpsCanvas = document.getElementById('fps');
-					var fpsContext = fpsCanvas.getContext('2d');
-					fpsContext.fillStyle = '#000000';
-					fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
-					fpsContext.fillStyle = '#ff00ff';
-					fpsContext.font = "24px sans-serif";
-					fpsContext.fillText("FPS: " + fps, 16, 32, fpsCanvas.width);
-					// const texture = new THREE.CanvasTexture(canvas);
-					// fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
-					// fpsPlane.material  = fpsMaterial;//.map.needsUpdate = true;
-					fpsPlane.material.map.needsUpdate = true;
-					fpsPlane.material.needsUpdate = true;
-					frames = 0;
-					prevTime = time;
-				}
+				// if ( time >= prevTime + 1000 ) {
+				// 	const info = document.getElementById( 'info' );
+				// 	const fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) );
+				// 	// info.textContent = "FPS: " + fps;
+				// 	var fpsCanvas = document.getElementById('fps');
+				// 	var fpsContext = fpsCanvas.getContext('2d');
+				// 	fpsContext.fillStyle = '#000000';
+				// 	fpsContext.fillRect(0, 0, fpsCanvas.width, fpsCanvas.height);
+				// 	fpsContext.fillStyle = '#ff00ff';
+				// 	fpsContext.font = "24px sans-serif";
+				// 	fpsContext.fillText("FPS: " + fps, 16, 32, fpsCanvas.width);
+				// 	// const texture = new THREE.CanvasTexture(canvas);
+				// 	// fpsMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff, map: texture, side: THREE.DoubleSide} );
+				// 	// fpsPlane.material  = fpsMaterial;//.map.needsUpdate = true;
+				// 	fpsPlane.material.map.needsUpdate = true;
+				// 	fpsPlane.material.needsUpdate = true;
+				// 	frames = 0;
+				// 	prevTime = time;
+				// }
 
 				renderer.render( scene, camera );
 
