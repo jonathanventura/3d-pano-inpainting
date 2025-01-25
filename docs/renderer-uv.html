@@ -102,12 +102,11 @@
 				fpsPlane.position.set(0,0,-4);
 
 				const urlParams = new URLSearchParams(window.location.search);
-				// const scene_name = urlParams.get('scene') + '.glb';
+				const scene_name = urlParams.get('scene') + '.glb';
 				// const scene_name = "ascheberg_kirchplatz_4k_inpaint_opt.glb";
 				// const scene_name = "ascheberg_kirchplatz_4k_inpaint_subdiv.glb";
-				const scene_name = "ascheberg_kirchplatz_2k_inpaint_opt.glb";
+				// const scene_name = "ascheberg_kirchplatz_2k_inpaint_opt.glb";
 				// const scene_name = "halde_zollern_nebel_4k_inpaint_opt.glb";
-				
 				const loader = new GLTFLoader();
 				loader.setMeshoptDecoder(MeshoptDecoder);
 				// const url = 'https://3dpanoinpainting.s3.us-west-1.amazonaws.com/'
