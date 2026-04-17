@@ -19,7 +19,7 @@ Shivam Asija, Edward Du, Nam Nguyen, Stefanie Zollmann, Jonathan Ventura<br>
 Abstract:
 Creating 360-degree 3D content is challenging because it requires either a multi-camera rig or a collection of many images taken from different perspectives. Our approach aims to generate a 360◦ VR scene from a single panoramic image using a learning-based inpainting method adapted for panoramic content. We introduce a pipeline capable of transforming an equirectangular panoramic RGB image into a complete 360◦ 3D virtual reality scene represented as a textured mesh, which is easily rendered on a VR headset using standard graphics rendering pipelines. We qualitatively evaluate our results on a synthetic dataset consisting of 360 panoramas in indoor scenes.
 
-VR Panorama Inpainting: A Feasibility Study of High-Resolution View Synthesis for Virtual Reality
+VR Panorama Inpainting: A Feasibility Study of High-Resolution View Synthesis for Virtual Reality<br>
 Lillian Eagan, Nam Nguyen, Angela Victoria Chen, Theresa Zhu, Seth Maxwell Johnson, Pranav Reddy Dumpa, Benjamin Jonson Geil, Jonathan Ventura, Stefanie Zollmann<br>
 2026 IEEE International Conference on Artificial Intelligence and eXtended and Virtual Reality (AIxVR)
 
