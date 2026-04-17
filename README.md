@@ -19,6 +19,12 @@ Shivam Asija, Edward Du, Nam Nguyen, Stefanie Zollmann, Jonathan Ventura<br>
 Abstract:
 Creating 360-degree 3D content is challenging because it requires either a multi-camera rig or a collection of many images taken from different perspectives. Our approach aims to generate a 360◦ VR scene from a single panoramic image using a learning-based inpainting method adapted for panoramic content. We introduce a pipeline capable of transforming an equirectangular panoramic RGB image into a complete 360◦ 3D virtual reality scene represented as a textured mesh, which is easily rendered on a VR headset using standard graphics rendering pipelines. We qualitatively evaluate our results on a synthetic dataset consisting of 360 panoramas in indoor scenes.
 
+VR Panorama Inpainting: A Feasibility Study of High-Resolution View Synthesis for Virtual Reality
+Lillian Eagan, Nam Nguyen, Angela Victoria Chen, Theresa Zhu, Seth Maxwell Johnson, Pranav Reddy Dumpa, Benjamin Jonson Geil, Jonathan Ventura, Stefanie Zollmann<br>
+2026 IEEE International Conference on Artificial Intelligence and eXtended and Virtual Reality (AIxVR)
+
+Abstract:
+In this work, we propose a machine learning-based pipeline for generating a 3D-colored mesh representation of a scene from a single-input panorama. Our approach allows us to create a fully immersive Virtual Reality (VR) experiences. Unlike neural rendering approaches that are constrained by lowresolution inputs and offline processing, we focus on high-quality resolution inputs (4 K) and real-time rendering on VR headsets by estimating a depth map and creating a layered depth image (LDI) representation. We iteratively fill unseen regions behind objects through a cutting and inpainting process, after which the LDI is converted into an optimized, texture-mapped 3D mesh, resulting in a compact and efficient representation. We assess the feasibility of this approach through a quantitative evaluation with a user study in VR, focusing on the practicality, visual quality, and perceived presence of the generated scenes.
 
 <!-- GETTING STARTED -->
 
